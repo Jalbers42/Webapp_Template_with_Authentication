@@ -1,13 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:wght@100;200;300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --border: #BDBDBD;  
+  --input: #F6F6F6; 
+  --ring: #9E9E9E; 
+  --background: #FFFFFF;  
+  --foreground: #000000; 
+  --primary: #000000; 
+  --primary-foreground: #FFFFFF;  
+  --secondary: #757575;
+  --secondary-foreground: #FFFFFF;  
+  --destructive: #424242; 
+  --destructive-foreground: #FFFFFF;
+  --muted: #E0E0E0;  
+  --muted-foreground: #000000;
+  --accent: #616161;  
+  --accent-foreground: #FFFFFF;
+  --popover: #F5F5F5;  
+  --popover-foreground: #000000;
+  --card: #FFFFFF;  
+  --radius: 10px;  /* adjust as needed */
+  --radix-accordion-content-height: 0px;  --card-foreground: #000000;
+}
+
 @layer base {
-    * {
+    /* * {
       @apply box-border list-none p-0 m-0 scroll-smooth;
     }
   
     body {
-      @apply bg-dark-1 text-white min-h-screen font-inter;
-    }
+      @apply bg-slate-200 text-black min-h-screen font-plex-sans;
+    } */
 }
