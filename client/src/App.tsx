@@ -1,12 +1,19 @@
-import { Button } from "./components/ui/button"
+
+import { Routes, Route } from 'react-router-dom'
+import './globals.css'
+import Home from './_root/pages/Home'
+import RootLayout from './_root/RootLayout'
 
 function App() {
 
   return (
-    <div className="text-3xl">
-      HELLO
-      <Button>WORLD</Button>
-    </div>
+    <main className="flex h-screen">
+      <Routes>
+        <Route element={<RootLayout/>}>
+          <Route index element={<Home/>} />
+        </Route>
+      </Routes>
+    </main>
   )
 }
 
