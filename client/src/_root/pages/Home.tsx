@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react"
+import { useUserContext } from '@/context/AuthContext'
               
 const Home = () => {
 
   const [messages, setMessages] = useState(["Hi", "hey"])
+  const { socket } = useUserContext();
 
   function addMessage() {
     setMessages([...messages, "NEW"])
