@@ -5,6 +5,15 @@
 @tailwind utilities;
 
 :root {
+
+  --tile-size : 100px;
+  --light-tile : #F0D8B6;
+  --dark-tile : #B48764;
+  --bg-color : #202020;
+  --highlight : rgba(0,0,0,.1);
+  --check : #FEEC48;
+
+
   --border: #BDBDBD;  
   --input: #F6F6F6; 
   --ring: #9E9E9E; 

@@ -24,6 +24,12 @@ module.exports = {
     },
     extend: {
       colors: {
+
+        light_tile: "var(--light-tile)",
+        dark_tile: "var(--dark-tile)",
+        bg_color: "var(--bg-color)",
+        check: "var(--check)",
+
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
