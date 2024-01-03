@@ -31,10 +31,6 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         setUser: setUser,
         socket: socket
     };
-    
-    socket.on('connect', () => {
-        console.log('Connected to server');
-    });
 
     useEffect(() => {
         return () => {

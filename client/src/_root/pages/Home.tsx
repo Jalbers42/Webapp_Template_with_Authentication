@@ -1,30 +1,46 @@
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useUserContext } from '@/context/AuthContext'
               
 const Home = () => {
 
-  const [messages, setMessages] = useState(["Hi", "hey"])
+  const [chat, setChat] = useState<string[]>([]);
+  const [message, setMessage] = useState<string>('');
   const { socket } = useUserContext();
 
-  function addMessage() {
-    setMessages([...messages, "NEW"])
+  function sendMessage(msg : string) {
+    if (socket) {
+      socket.emit('newMessage', msg);
+    }
   }
 
   function clear() {
-    setMessages([])
+    setChat([])
   }
+
+  useEffect(() => {
+    if (socket) {
+      const handleNewMessage = (msg: any) => {
+        setChat(prevChat => [...prevChat, msg.content]);
+        console.log('Received message', msg);
+      };
+      socket.on('onMessage', handleNewMessage);
+      return () => {
+        socket.off('onMessage', handleNewMessage);
+      };
+    }
+  }, [socket, setChat]);
 
   return (
     <div className="flex flex-1 items-center justify-center">
       <div>
-        {messages.map((element, index) => (
+       {chat.map((element, index) => (
           <div key={index}>{element}</div>
         ))}
         <div className="grid w-full gap-2">
-          <Textarea placeholder="Type your message here." />
-          <Button onClick={addMessage}>Send message</Button>
+          <Textarea placeholder="Type your message here." value={message} onChange={(e) => {setMessage(e.target.value)}}/>
+          <Button onClick={() => sendMessage(message)}>Send message</Button>
           <Button onClick={clear}>Clear</Button>
         </div>
       </div>
