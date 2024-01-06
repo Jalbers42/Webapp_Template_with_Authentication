@@ -1,4 +1,4 @@
-import Chessboard from "@/components/shared/Chessboard"
+import Chessboard from "@/components/shared/Chess/Chessboard"
 
 const Home = () => {
   return (
