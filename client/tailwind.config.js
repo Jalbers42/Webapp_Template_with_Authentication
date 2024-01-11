@@ -30,6 +30,8 @@ module.exports = {
         bg_color: "var(--bg-color)",
         check: "var(--check)",
 
+
+
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",

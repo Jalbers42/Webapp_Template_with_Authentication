@@ -3,3 +3,8 @@ export type IUser = {
     password: string,
     rank: number,
 }
+
+export interface Position {
+    row: number;
+    col: number;
+}
