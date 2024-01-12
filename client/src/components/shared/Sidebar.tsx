@@ -1,10 +1,17 @@
+import { ModeToggle } from "../mode-toggle"
 import { Button } from "../ui/button"
 
 const Sidebar = () => {
   return (
-    <div className="sidebar">
-      <Button>Dark Mode</Button>
-    </div>
+      <nav className="sidebar">
+        <div className="flex flex-col gap-4">
+          <Button>Home</Button>
+          <Button variant={"secondary"}>Profile</Button>
+        </div>
+        <div className="flex flex-col">
+          <ModeToggle />
+        </div>
+      </nav>
   )
 }
 

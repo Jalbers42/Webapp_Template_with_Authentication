@@ -8,3 +8,8 @@ export interface Position {
     row: number;
     col: number;
 }
+
+export interface LastMove {
+    start_pos: Position;
+    end_pos: Position;
+}
