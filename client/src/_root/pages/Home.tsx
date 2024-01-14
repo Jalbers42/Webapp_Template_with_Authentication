@@ -1,9 +1,11 @@
-import Chessboard from "@/components/shared/Chess/Chessboard"
+import Chessboard from "@/components/shared/Chessboard/Chessboard"
+import PlayOnline from "@/components/shared/PlayOnline"
 
 const Home = () => {
   return (
-    <div>
-        <Chessboard />
+    <div className="w-full h-full">
+        <PlayOnline />
+        {/* <Chessboard /> */}
     </div>
   )
 }

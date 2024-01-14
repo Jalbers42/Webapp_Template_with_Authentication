@@ -1,6 +1,6 @@
+import { generateRandomString } from "@/lib/utilities/utilities";
 import { IUser } from "@/types";
-import { createContext, useContext, useEffect, useState } from "react";
-import { Socket, io } from "socket.io-client";
+import { createContext, useContext, useState } from "react";
 
 const INITIAL_USER = {
     username: "",
@@ -17,27 +17,19 @@ const INITIAL_STATE = {
 type IContextType = {
     user: IUser;
     setUser: React.Dispatch<React.SetStateAction<IUser>>;
-    socket: Socket | null;
 }
 
 const AuthContext = createContext<IContextType>(INITIAL_STATE);
 
 export function AuthProvider({ children } : {children : React.ReactNode}) {
     const [user, setUser] = useState<IUser>(INITIAL_USER);
-    const socket = io('http://localhost:3000');
+
+    user.username = generateRandomString(10);
 
     const value = {
         user: user,
         setUser: setUser,
-        socket: socket
     };
-
-    useEffect(() => {
-        return () => {
-            console.log('Disconnected from server');
-            socket.disconnect();
-        };
-    }, []);
 
     return (
     <AuthContext.Provider value={value}>

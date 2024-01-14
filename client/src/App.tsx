@@ -10,7 +10,7 @@ function App() {
     <main className="flex h-screen">
       <Routes>
         <Route element={<RootLayout/>}>
-          <Route index element={<Home/>} />
+          <Route index element={<Home />} />
           <Route path="/test" element={<TestPage />} />
         </Route>
       </Routes>

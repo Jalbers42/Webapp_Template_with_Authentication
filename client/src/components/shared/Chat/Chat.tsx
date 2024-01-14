@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useEffect, useState } from "react"
-import { useUserContext } from '@/context/AuthContext'
+// import { useUserContext } from '@/context/AuthContext'
+import { useWebSocketContext } from "@/context/WebSocketContext"
               
 const Chat = () => {
 
   const [chat, setChat] = useState<string[]>([]);
   const [message, setMessage] = useState<string>('');
-  const { socket } = useUserContext();
+  const { socket } = useWebSocketContext();
 
   function sendMessage(msg : string) {
     if (socket) {
