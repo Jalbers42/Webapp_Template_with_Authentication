@@ -12,7 +12,7 @@ function App() {
       <Routes>
         <Route element={<RootLayout/>}>
           <Route index element={<Home />} />
-          <Route path="/game/:gameId" element={<Game />} />
+          <Route path="/game/:game_id" element={<Game />} />
           <Route path="/test" element={<TestPage />} />
         </Route>
       </Routes>

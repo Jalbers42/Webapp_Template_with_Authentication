@@ -3,12 +3,11 @@ import { useParams } from "react-router-dom";
 
 const Game = () => {
 
-    const { gameId } = useParams();
+  const { game_id } = useParams();
 
   return (
     <div>
-        <div>{gameId}</div>
-        <Chessboard />
+      {game_id && <Chessboard game_id={game_id}/>}
     </div>
   )
 }

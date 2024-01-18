@@ -122,7 +122,7 @@ export const is_move_possible = (board : string[][], old_pos : Position, new_pos
             return (true);
     }
     else if (piece == 'r') {
-        if (is_rook_move(old_pos, new_pos)) {
+        if (is_rook_move(old_pos, new_pos) && is_path_clear(board, old_pos, new_pos)) {
             return (true);
         }
     }
@@ -131,7 +131,7 @@ export const is_move_possible = (board : string[][], old_pos : Position, new_pos
         return (true);
     }
     else if (piece == 'b') {
-        if (is_bishop_move(old_pos, new_pos))
+        if (is_bishop_move(old_pos, new_pos) && is_path_clear(board, old_pos, new_pos))
         return (true);
     }
     else if (piece == 'q') {

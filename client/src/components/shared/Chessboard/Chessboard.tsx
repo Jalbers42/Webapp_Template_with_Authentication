@@ -10,13 +10,15 @@
 /*                                                                            */
 /******************************************************************************/
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { render_img } from "./render_image";
 import { is_move_possible } from "./move_rules";
 import { LastMove, Position } from "@/types";
+import { useWebSocketContext } from "@/context/WebSocketContext";
 
-const Chessboard = () => {
+const Chessboard = (props : {game_id : string}) => {
     
+    const { socket } = useWebSocketContext();
     const [piece, setPiece] = useState<Position | null>();
     const [lastMove, setLastMove] = useState<LastMove>();
     const [turn, setTurn] = useState('w');
@@ -32,7 +34,8 @@ const Chessboard = () => {
         ['wr','wn','wb','wq','wk','wb','wn','wr']
     ]);
 
-    const board = [...stateBoard];
+    // let board = [...stateBoard];
+    let board : string[][] = JSON.parse(JSON.stringify(stateBoard));
 
     const   selectPiece = (row : number, col : number) => {
         if (piece)
@@ -69,9 +72,25 @@ const Chessboard = () => {
             switch_pieces(piece, row, col);
             switch_turn();
             setPiece(null);
+            socket?.emit('movePiece', {game_id :props.game_id as string, board: board as string[][]});
         }
         setStateBoard(board);
     }
+
+    useEffect(() => {
+        if (socket) {
+            const updateBoard = (new_board : string[][], turn : string) => {
+                board = new_board;
+                setStateBoard(new_board);
+                setTurn(turn);
+                console.log("Board update received", new_board);
+            };
+            socket.on('Board update', updateBoard);
+            return () => {
+                socket.off('Board update', updateBoard);
+            };
+        }
+    }, [socket]);
     
   return (
     <div className="chessboard">
