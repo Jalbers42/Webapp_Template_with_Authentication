@@ -3,6 +3,7 @@ import './globals.css'
 import Home from './_root/pages/Home'
 import RootLayout from './_root/RootLayout'
 import TestPage from './_root/pages/TestPage'
+import Game from './_root/pages/Game'
 
 function App() {
   
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route element={<RootLayout/>}>
           <Route index element={<Home />} />
+          <Route path="/game/:gameId" element={<Game />} />
           <Route path="/test" element={<TestPage />} />
         </Route>
       </Routes>

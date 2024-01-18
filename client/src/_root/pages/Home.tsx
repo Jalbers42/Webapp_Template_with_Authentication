@@ -1,4 +1,3 @@
-import Chessboard from "@/components/shared/Chessboard/Chessboard"
 import PlayOnline from "@/components/shared/PlayOnline"
 
 const Home = () => {

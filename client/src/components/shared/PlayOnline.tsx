@@ -2,11 +2,13 @@ import { Button } from "../ui/button"
 import { useUserContext } from '@/context/AuthContext'
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const PlayOnline = () => {
 
-    const { user } = useUserContext();
-    const { socket } = useWebSocketContext();
+    const   { user } = useUserContext();
+    const   { socket } = useWebSocketContext();
+    let     navigate = useNavigate();
 
     const addToQueue = () => {
         if (socket === null) {
@@ -16,34 +18,18 @@ const PlayOnline = () => {
         socket.emit('addToQueue', user.username);
     }
 
-    type MatchData = {
-      opponent: string;
-    };
+    useEffect(() => {
+        const handleMatchCreated = (gameId : string) => {
+            navigate("/game/" + gameId);
+        };
+    
+        if (socket) {
+            socket.on('match created', handleMatchCreated);
+            return () => socket.off('match created', handleMatchCreated);
+        }
 
-    const handleMatchCreated = (data : MatchData) => {
-        console.log('Match created. ', data)
-    }
-
-    if (socket) {
-        socket.on('match created', handleMatchCreated);
-        console.log("test");
-    } else {
-        console.log("Not connected");
-    }
-
-    // useEffect(() => {
-    //     // if (gameSessionSocket) {
-    //     //   gameSessionSocket.on('match created', handleMatchCreated);
-    //     // }
-
-      
-    //     // Cleanup to run when component unmounts
-    //     return () => {
-    //       if (gameSessionSocket) {
-    //         gameSessionSocket.off('match created', handleMatchCreated);
-    //       }
-    //     }
-    //   }, [gameSessionSocket]);
+        return () => {};
+      }, [socket]);
 
   return (
     <div className="w-full h-full border flex flex-col gap-5 items-center justify-center">

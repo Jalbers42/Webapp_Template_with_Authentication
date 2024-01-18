@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --tile-size : 100px;
+    --tile-size : 80px;
     --light-tile : #F0D8B6;
     --dark-tile : #B48764;
     --player-tile : #d7ff6876;
