@@ -15,8 +15,9 @@ export interface LastMove {
 }
 
 export interface GameSession {
-    id : string;
-    player_white : string;
-    player_black : string;
+    username_white : string;
+    username_black : string;
+    turn: string;
+    start_time: Date;
     board : string[][];
 }
