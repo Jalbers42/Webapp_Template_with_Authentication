@@ -19,7 +19,7 @@ import { useUserContext } from "@/context/AuthContext";
 
 const Chessboard = (props : {game_id : string}) => {
     
-    console.log("render");
+    console.log("Chessboard Render");
 
     const { user } = useUserContext();
     const { socket } = useWebSocketContext();

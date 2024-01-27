@@ -117,6 +117,7 @@ export const is_move_possible = (board : string[][], old_pos : Position, new_pos
     const piece = board[old_pos.row][old_pos.col][1];
     const color = board[old_pos.row][old_pos.col][0];
 
+    return (true);
     if (piece == 'p'){
         if (is_pawn_move(board, color, old_pos, new_pos))
             return (true);
