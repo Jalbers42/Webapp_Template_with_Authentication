@@ -143,6 +143,5 @@ export const is_move_possible = (board : string[][], old_pos : Position, new_pos
         if (is_king_move(old_pos, new_pos))
             return (true);
     }
-    else
-        return (false);
+    return (false);
 }

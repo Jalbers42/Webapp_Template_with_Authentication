@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --tile-size : 60px;
+    --tile-size : 55px;
     --light-tile : #F0D8B6;
     --dark-tile : #B48764;
     --player-tile : #d7ff6876;
@@ -81,6 +81,6 @@
   }
 
   .chessboard {
-    @apply flex flex-col h-full ml-40
+    @apply relative flex flex-col h-full ml-10
   }
 }

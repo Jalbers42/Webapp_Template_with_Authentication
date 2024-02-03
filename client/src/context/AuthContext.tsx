@@ -1,6 +1,6 @@
 import { generateRandomString } from "@/lib/utilities/utilities";
 import { IUser } from "@/types";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const INITIAL_USER = {
     username: "",
@@ -24,13 +24,17 @@ const AuthContext = createContext<IContextType>(INITIAL_STATE);
 export function AuthProvider({ children } : {children : React.ReactNode}) {
     const [user, setUser] = useState<IUser>(INITIAL_USER);
 
-    user.username = generateRandomString(10);
+    console.log("Auth Context Render");
 
     const value = {
         user: user,
         setUser: setUser,
     };
 
+    useEffect(() => {
+        setUser(user => ({...user, username: generateRandomString(10)}));
+    }, [])
+    
     return (
     <AuthContext.Provider value={value}>
         {children}
