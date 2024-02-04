@@ -82,9 +82,10 @@ const Chessboard = (props : {game_id : string}) => {
     }
 
     const handle_promotion = async (row : number, col : number) => {
-        // if ((row == 0 || row == 7) && board[row][col][1] == 'p')
+        if ((row == 0 || row == 7) && board[row][col][1] == 'p') {
             setIsPromotionOpen(true);
             setPromotedPiecePosition({row, col});
+        }
     }
     
     const send_promotion_to_server = () => {

@@ -1,3 +1,15 @@
+/******************************************************************************/
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*                                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*                                                  +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Jalbers42                                         #+#    #+#             */
+/*   https://github.com/Jalbers42                     ###   ###########       */
+/*                                                                            */
+/******************************************************************************/
+
 import { generateRandomString } from "@/lib/utilities/utilities";
 import { IUser } from "@/types";
 import { createContext, useContext, useEffect, useState } from "react";
