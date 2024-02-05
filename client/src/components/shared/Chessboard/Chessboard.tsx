@@ -116,15 +116,23 @@ const Chessboard = (props : {game_id : string}) => {
             new_pos: new_pos as Position
         });
     }
+
+    const preselectMove = (row : number, col : number) => {
+        
+    }
     
     const make_move = async (row : number, col : number) => {
-        if (piece && side == turn && board[piece.row][piece.col][0] == turn && is_move_possible(board, piece, {row, col})) {
-            switch_pieces(piece, row, col);
-            remove_highlights();
-            send_move_to_server(piece, {row, col});
-            handle_promotion(row, col);
-            switch_turn();
-            setPiece(null);
+        if (piece && board[piece.row][piece.col][0] == turn && is_move_possible(board, piece, {row, col})) {
+            if (side != turn) {
+                preselectMove();
+            } else {
+                switch_pieces(piece, row, col);
+                remove_highlights();
+                send_move_to_server(piece, {row, col});
+                handle_promotion(row, col);
+                switch_turn();
+                setPiece(null);
+            }
         }
         else if (board[row][col][0] != '0')
             selectPiece(row, col);
