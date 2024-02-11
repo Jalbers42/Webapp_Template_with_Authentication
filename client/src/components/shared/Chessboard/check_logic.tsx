@@ -12,6 +12,6 @@
 
 import { Position, Tile } from "@/types & constants/types";
 
-export const is_king_in_check = (board : Tile[][], old_pos : Position, new_pos : Position, side : string) => {
+export const is_king_in_check = (board : Tile[][], side : string) => {
     return (false);
 }

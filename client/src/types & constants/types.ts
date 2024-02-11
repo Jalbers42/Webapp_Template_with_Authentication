@@ -6,6 +6,8 @@ export type IUser = {
 }
 
 export interface Tile {
+    row: number;
+    col: number
     piece: string;
     focus: boolean;
     lastMove: boolean;
