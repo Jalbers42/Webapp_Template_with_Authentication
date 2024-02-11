@@ -1,7 +1,16 @@
+
 export type IUser = {
     username: string,
     password: string,
     rank: number,
+}
+
+export interface Tile {
+    piece: string;
+    focus: boolean;
+    lastMove: boolean;
+    preMove: boolean;
+    possibleMove: boolean;
 }
 
 export interface Position {

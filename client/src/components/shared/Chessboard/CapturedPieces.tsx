@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { render_img } from './render_image';
+import { Tile } from '@/types & constants/types';
 
-const CapturedPieces = (props : {board : string[][], side : string | null}) => {
-    
+const CapturedPieces = (props : {board : Tile[][], side : string | null}) => {
+
     const [capturedPieces, setCapturedPieces] = useState<string[]>([]);
 
-    const get_captured_pieces = (board : string[][], side : string) => {
+    const get_captured_pieces = (board : Tile[][], side : string) => {
         const captured_pieces : string[] = [];
         let queen : number = 1;
         let rook : number = 2;
@@ -15,16 +16,16 @@ const CapturedPieces = (props : {board : string[][], side : string | null}) => {
 
         board.map((row) => {
             row.map((element) => {
-                if (element[0] == side) {
-                    if (element[1] == 'q')
+                if (element.piece[0] == side) {
+                    if (element.piece[1] == 'q')
                         queen--;
-                    else if (element[1] == 'r')
+                    else if (element.piece[1] == 'r')
                         rook--;
-                    else if (element[1] == 'b')
+                    else if (element.piece[1] == 'b')
                         bishop--;
-                    else if (element[1] == 'n')
+                    else if (element.piece[1] == 'n')
                         knight--;
-                    else if (element[1] == 'p')
+                    else if (element.piece[1] == 'p')
                         pawn--;
                 }
             })
@@ -39,7 +40,7 @@ const CapturedPieces = (props : {board : string[][], side : string | null}) => {
             captured_pieces.push(side + 'n');
         for (let i = 0; i < pawn; i++)
             captured_pieces.push(side + 'p');
-    
+
         return (captured_pieces);
     }
 

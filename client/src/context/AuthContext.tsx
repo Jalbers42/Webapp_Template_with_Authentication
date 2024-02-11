@@ -10,8 +10,8 @@
 /*                                                                            */
 /******************************************************************************/
 
-import { generateRandomString } from "@/lib/utilities/utilities";
-import { IUser } from "@/types";
+import { generateRandomString } from "@/lib/utilities";
+import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const INITIAL_USER = {
@@ -46,7 +46,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     useEffect(() => {
         setUser(user => ({...user, username: generateRandomString(10)}));
     }, [])
-    
+
     return (
     <AuthContext.Provider value={value}>
         {children}
