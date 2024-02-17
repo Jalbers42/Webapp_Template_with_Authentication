@@ -27,9 +27,19 @@ const Chessboard = (props : {game_id : string}) => {
 
     const { user } = useUserContext();
     const { socket } = useWebSocketContext();
+
+    const [stateBoard, setStateBoard] = useState<Tile[][]>([]);
+
+    const boardRef = useRef<Tile[][]>([]);
+    const focusTileRef = useRef<Tile | null>(null);
+    const turnRef = useRef<string>('w');
+    const sideRef = useRef<string | null>(null);
+
+        const board = boardRef.current;
+
     // const [focusTile, setfocusTile] = useState<Tile| null>(null);
-    const [turn, setTurn] = useState<string>('w');
-    const [side, setSide] = useState<string | null>(null);
+    // const [turn, setTurn] = useState<string>('w');
+    // const [side, setSide] = useState<string | null>(null);
     const [isPromotionOpen, setIsPromotionOpen] = useState<boolean>(false);
     const [opponent, setOpponent] = useState<string>("");
     const [promotedPieceType, setPromotedPieceType] = useState<string | null>(null);
@@ -39,9 +49,6 @@ const Chessboard = (props : {game_id : string}) => {
     const preMoveRef = useRef(preMove);
     preMoveRef.current = preMove;
 
-    const [stateBoard, setStateBoard] = useState<Tile[][]>([]);
-    const boardRef = useRef<Tile[][]>([]);
-    const focusTileRef = useRef<Tile | null>(null);
 
     const selectPiece = (tile : Tile) => {
         if (tile.piece[0] != '0') {
@@ -53,10 +60,10 @@ const Chessboard = (props : {game_id : string}) => {
     }
 
     const switch_turn = () => {
-        if (turn == 'w')
-            setTurn('b');
+        if (turnRef.current == 'w')
+            turnRef.current = 'b';
         else
-            setTurn('w');
+            turnRef.current = 'w';
     }
 
     const move_piece = (old_tile: Tile, new_tile: Tile) => {
@@ -120,13 +127,14 @@ const Chessboard = (props : {game_id : string}) => {
     }
 
     const handle_click_tile = (tile : Tile) => {
+        // const board = boardRef.current;
+        const side = sideRef.current;
         const focusTile = focusTileRef.current;
-        const board = boardRef.current;
 
         if (focusTile == tile)
             return;
         else if (focusTile && focusTile.piece[0] == side && is_move_possible(board, focusTile, tile)) {
-            if (side != turn)
+            if (side != turnRef.current)
                 selectPreMove(focusTile, tile);
             else if (!is_king_in_check(board, side))
                 execute_move(board, focusTile, tile);
@@ -142,14 +150,14 @@ const Chessboard = (props : {game_id : string}) => {
                 console.log("getGameSession received");
                 const { username_white, username_black, turn, start_time, board: new_board } = data;
                 if (username_white == user.username) {
-                    setSide('w');
+                    sideRef.current = 'w';
                     setOpponent(username_black);
                 }
                 else {
-                    setSide('b');
+                    sideRef.current = 'b';
                     setOpponent(username_white);
                 }
-                setTurn(turn);
+                turnRef.current = turn;
                 setStateBoard(new_board.map((array, row) => array.map((piece, col) => ({piece, row, col, ...DefaultTileFields}))));
             }
             const updateBoard = (new_board : string[][], turn : string) => {
@@ -158,7 +166,7 @@ const Chessboard = (props : {game_id : string}) => {
                 if (focusTileRef.current)
                     converted_board[focusTileRef.current.row][focusTileRef.current.col].focus = true;
                 setStateBoard(converted_board);
-                setTurn(turn);
+                turnRef.current = turn;
                 if (preMoveRef.current && focusTileRef.current && true) {
                     execute_move(boardRef.current, focusTileRef.current, preMoveRef.current);
                 }
@@ -193,15 +201,15 @@ return (
     <div className="chessboard">
         <div className="ml-[30px]">
             <div>{opponent}</div>
-            <CapturedPieces board={stateBoard} side={side}/>
+            <CapturedPieces board={stateBoard} side={sideRef.current}/>
         </div>
-        {side && stateBoard.map((row, original_i) => {
-            const i = side === 'w' ? original_i : 7 - original_i;
+        {sideRef.current && stateBoard.map((row, original_i) => {
+            const i = sideRef.current === 'w' ? original_i : 7 - original_i;
             return (
                 <div key={original_i} className="flex">
                     <div className="flex items-center justify-center w-[30px]">{8 - i}</div>
                     {row.map((piece, original_j) => {
-                        const j = side === 'w' ? original_j : 7 - original_j;
+                        const j = sideRef.current === 'w' ? original_j : 7 - original_j;
                         return (
                             <div key={j} onClick={() => handle_click_tile(boardRef.current[i][j])} className={`w-[var(--tile-size)] h-[var(--tile-size)] ${((j + i) % 2 == 0) ? "bg-light_tile" : "bg-dark_tile"}`}>
                                 <div className={`w-full h-full ${(stateBoard[i][j].focus && "bg-[var(--player-tile)]")} ${(stateBoard[i][j].preMove && "bg-[var(--preselect-tile)]")}`}>
@@ -213,15 +221,15 @@ return (
         )})}
         <div className="flex ml-[30px]">
             {COLUMNS.map((element, original_i) => {
-                const i = side === 'w' ? original_i : 7 - original_i;
+                const i = sideRef.current === 'w' ? original_i : 7 - original_i;
                 return (<div key={i} className="flex items-center justify-center w-[var(--tile-size)] h-[30px]">{COLUMNS[i]}</div>)
             })}
         </div>
         <div className="ml-[30px]">
             <div>{user.username}</div>
-            <CapturedPieces board={stateBoard} side={side === 'w' ? 'b' : 'w'}/>
+            <CapturedPieces board={stateBoard} side={sideRef.current === 'w' ? 'b' : 'w'}/>
         </div>
-        {isPromotionOpen && side && <Promotion side={side} setPromotedPieceType={setPromotedPieceType}/>}
+        {isPromotionOpen && sideRef.current && <Promotion side={sideRef.current} setPromotedPieceType={setPromotedPieceType}/>}
     </div>
   )
 }
