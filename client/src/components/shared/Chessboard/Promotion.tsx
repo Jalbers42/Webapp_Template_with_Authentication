@@ -14,11 +14,11 @@ import { render_img } from "./render_image"
 
 const Promotion = (props : {
     side : string;
-    setPromotedPieceType : React.Dispatch<React.SetStateAction<string | null>>;
+    update_promoted_piece: (selected_piece : string) => void;
 }) => {
 
     const handleSelection = (piece_type: string) => {
-        props.setPromotedPieceType(props.side + piece_type)
+        props.update_promoted_piece(props.side + piece_type)
     }
 
   return (

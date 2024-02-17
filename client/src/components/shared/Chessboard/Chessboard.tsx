@@ -34,18 +34,14 @@ const Chessboard = (props : {game_id : string}) => {
     const focusTileRef = useRef<Tile | null>(null);
     const turnRef = useRef<string>('w');
     const sideRef = useRef<string | null>(null);
+    const opponent = useRef<string>("");
 
-        const board = boardRef.current;
 
-    // const [focusTile, setfocusTile] = useState<Tile| null>(null);
-    // const [turn, setTurn] = useState<string>('w');
-    // const [side, setSide] = useState<string | null>(null);
-    const [isPromotionOpen, setIsPromotionOpen] = useState<boolean>(false);
-    const [opponent, setOpponent] = useState<string>("");
-    const [promotedPieceType, setPromotedPieceType] = useState<string | null>(null);
-    const [promotedPiecePosition, setPromotedPiecePosition] = useState<Position | null>(null);
+    const isPromotionOpen = useRef<boolean>(false);
+    const promotedPiece = useRef<Tile | null>(null);
+
+
     const [preMove, setPreMove] = useState<Tile | null>(null);
-
     const preMoveRef = useRef(preMove);
     preMoveRef.current = preMove;
 
@@ -83,22 +79,27 @@ const Chessboard = (props : {game_id : string}) => {
         })
     }
 
-    const handle_promotion = async (new_tile : Tile) => {
+    const handle_promotion = (new_tile : Tile) => {
         if ((new_tile.row == 0 || new_tile.row == 7) && new_tile.piece[1] == 'p') {
-            setIsPromotionOpen(true);
-            setPromotedPiecePosition(new_tile);
+            isPromotionOpen.current = true;
+            promotedPiece.current = new_tile;
         }
     }
 
-    const send_promotion_to_server = () => {
-        socket?.emit('promotePiece', {
-            game_id : props.game_id as string,
-            username: user.username as string,
-            type: promotedPieceType as string,
-            position: promotedPiecePosition as Position
-        });
+    const update_promoted_piece = (selected_piece : string) => {
+        if (promotedPiece.current) {
+            boardRef.current[promotedPiece.current.row][promotedPiece.current.col].piece = selected_piece;
+            isPromotionOpen.current = false;
+            setStateBoard(boardRef.current);
+            socket?.emit('promotePiece', {
+                game_id : props.game_id as string,
+                username: user.username as string,
+                type: selected_piece as string,
+                position: {row: promotedPiece.current?.row, col: promotedPiece.current?.col} as Position
+            });
+            promotedPiece.current = null;
+        }
     }
-
 
     const send_move_to_server = (old_tile : Tile, new_tile : Tile) => {
         socket?.emit('movePiece', {
@@ -121,13 +122,13 @@ const Chessboard = (props : {game_id : string}) => {
         move_piece(old_tile, new_tile);
         remove_highlights(board);
         send_move_to_server(old_tile, new_tile);
-        handle_promotion(new_tile);
         switch_turn();
         focusTileRef.current = null;
+        handle_promotion(new_tile);
     }
 
     const handle_click_tile = (tile : Tile) => {
-        // const board = boardRef.current;
+        const board = boardRef.current;
         const side = sideRef.current;
         const focusTile = focusTileRef.current;
 
@@ -151,11 +152,11 @@ const Chessboard = (props : {game_id : string}) => {
                 const { username_white, username_black, turn, start_time, board: new_board } = data;
                 if (username_white == user.username) {
                     sideRef.current = 'w';
-                    setOpponent(username_black);
+                    opponent.current = username_black;
                 }
                 else {
                     sideRef.current = 'b';
-                    setOpponent(username_white);
+                    opponent.current = username_white;
                 }
                 turnRef.current = turn;
                 setStateBoard(new_board.map((array, row) => array.map((piece, col) => ({piece, row, col, ...DefaultTileFields}))));
@@ -183,24 +184,13 @@ const Chessboard = (props : {game_id : string}) => {
     }, [socket]);
 
     useEffect(() => {
-        if (promotedPieceType !== null && promotedPiecePosition !== null) {
-            boardRef.current[promotedPiecePosition.row][promotedPiecePosition.col].piece = promotedPieceType;
-            setStateBoard(boardRef.current);
-            send_promotion_to_server();
-            setPromotedPieceType(null);
-            setPromotedPiecePosition(null);
-            setIsPromotionOpen(false);
-        }
-    }, [promotedPieceType])
-
-    useEffect(() => {
         boardRef.current = [...stateBoard];
     }, [stateBoard]);
 
 return (
     <div className="chessboard">
         <div className="ml-[30px]">
-            <div>{opponent}</div>
+            <div>{opponent.current}</div>
             <CapturedPieces board={stateBoard} side={sideRef.current}/>
         </div>
         {sideRef.current && stateBoard.map((row, original_i) => {
@@ -229,7 +219,7 @@ return (
             <div>{user.username}</div>
             <CapturedPieces board={stateBoard} side={sideRef.current === 'w' ? 'b' : 'w'}/>
         </div>
-        {isPromotionOpen && sideRef.current && <Promotion side={sideRef.current} setPromotedPieceType={setPromotedPieceType}/>}
+        {isPromotionOpen.current && sideRef.current && <Promotion side={sideRef.current} update_promoted_piece={update_promoted_piece} />}
     </div>
   )
 }
