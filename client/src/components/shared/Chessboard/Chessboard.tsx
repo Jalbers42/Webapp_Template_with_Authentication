@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { render_img } from "./render_image";
-import { is_move_possible } from "./move_rules";
+import { is_move_legal } from "./move_rules";
 import { GameSession, Position, Tile } from "@/types & constants/types";
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useUserContext } from "@/context/AuthContext";
@@ -29,22 +29,14 @@ const Chessboard = (props : {game_id : string}) => {
     const { socket } = useWebSocketContext();
 
     const [stateBoard, setStateBoard] = useState<Tile[][]>([]);
-
     const boardRef = useRef<Tile[][]>([]);
     const focusTileRef = useRef<Tile | null>(null);
     const turnRef = useRef<string>('w');
     const sideRef = useRef<string | null>(null);
-    const opponent = useRef<string>("");
-
-
-    const isPromotionOpen = useRef<boolean>(false);
-    const promotedPiece = useRef<Tile | null>(null);
-
-
-    const [preMove, setPreMove] = useState<Tile | null>(null);
-    const preMoveRef = useRef(preMove);
-    preMoveRef.current = preMove;
-
+    const opponentRef = useRef<string>("");
+    const isPromotionOpenRef = useRef<boolean>(false);
+    const promotedPieceRef = useRef<Tile | null>(null);
+    const preMoveRef = useRef<Tile[]>([]);
 
     const selectPiece = (tile : Tile) => {
         if (tile.piece[0] != '0') {
@@ -64,9 +56,9 @@ const Chessboard = (props : {game_id : string}) => {
 
     const move_piece = (old_tile: Tile, new_tile: Tile) => {
         new_tile.piece = old_tile.piece;
-        new_tile.focus = true;
+        new_tile.lastMove = true;
         old_tile.piece = "00";
-        old_tile.focus = true;
+        old_tile.lastMove = true;
     }
 
     const remove_highlights = (board : Tile[][]) => {
@@ -81,23 +73,50 @@ const Chessboard = (props : {game_id : string}) => {
 
     const handle_promotion = (new_tile : Tile) => {
         if ((new_tile.row == 0 || new_tile.row == 7) && new_tile.piece[1] == 'p') {
-            isPromotionOpen.current = true;
-            promotedPiece.current = new_tile;
+            isPromotionOpenRef.current = true;
+            promotedPieceRef.current = new_tile;
         }
     }
 
     const update_promoted_piece = (selected_piece : string) => {
-        if (promotedPiece.current) {
-            boardRef.current[promotedPiece.current.row][promotedPiece.current.col].piece = selected_piece;
-            isPromotionOpen.current = false;
+        let promotedPiece = promotedPieceRef.current;
+        if (promotedPiece) {
+            boardRef.current[promotedPiece.row][promotedPiece.col].piece = selected_piece;
+            isPromotionOpenRef.current = false;
             setStateBoard(boardRef.current);
             socket?.emit('promotePiece', {
                 game_id : props.game_id as string,
                 username: user.username as string,
                 type: selected_piece as string,
-                position: {row: promotedPiece.current?.row, col: promotedPiece.current?.col} as Position
+                position: {row: promotedPiece.row, col: promotedPiece.col} as Position
             });
-            promotedPiece.current = null;
+            promotedPieceRef.current = null;
+        }
+    }
+
+    const select_pre_move = (focusTile : Tile, tile : Tile) => {
+        if (focusTile) {
+            if (preMoveRef.current.length > 0)
+                clear_pre_move(boardRef.current)
+            preMoveRef.current.push(focusTile);
+            preMoveRef.current.push(tile);
+            focusTile.preMove = true;
+            tile.preMove = true;
+            move_piece(focusTile, tile);
+        }
+    }
+
+    const clear_pre_move = (board : Tile[][]) => {
+        if (preMoveRef.current.length > 0) {
+            const preMoveStart = preMoveRef.current[0];
+            const preMoveEnd = preMoveRef.current[1];
+            board[preMoveStart.row][preMoveStart.col].preMove = false;
+            board[preMoveEnd.row][preMoveEnd.col].preMove = false;
+            move_piece(board[preMoveEnd.row][preMoveEnd.col], board[preMoveStart.row][preMoveStart.col]);
+            // last move needs to be set to false after move piece
+            board[preMoveStart.row][preMoveStart.col].lastMove = false;
+            board[preMoveEnd.row][preMoveEnd.col].lastMove = false;
+            preMoveRef.current = [];
         }
     }
 
@@ -110,72 +129,77 @@ const Chessboard = (props : {game_id : string}) => {
         });
     }
 
-    const selectPreMove = (focusTile : Tile, tile : Tile) => {
-        if (focusTile) {
-            setPreMove(tile);
-            focusTile.preMove = true;
-            tile.preMove = true;
-        }
-    }
-
     const execute_move = (board : Tile[][], old_tile : Tile, new_tile : Tile) => {
-        move_piece(old_tile, new_tile);
         remove_highlights(board);
-        send_move_to_server(old_tile, new_tile);
+        move_piece(old_tile, new_tile);
         switch_turn();
-        focusTileRef.current = null;
+        send_move_to_server(old_tile, new_tile);
         handle_promotion(new_tile);
+        focusTileRef.current = null;
     }
 
-    const handle_click_tile = (tile : Tile) => {
-        const board = boardRef.current;
-        const side = sideRef.current;
+    const handle_click_tile = (new_tile : Tile) => {
         const focusTile = focusTileRef.current;
+        const side = sideRef.current;
+        const board = boardRef.current;
+        const turn = turnRef.current;
 
-        if (focusTile == tile)
+        if (focusTile == new_tile || !side)
             return;
-        else if (focusTile && focusTile.piece[0] == side && is_move_possible(board, focusTile, tile)) {
-            if (side != turnRef.current)
-                selectPreMove(focusTile, tile);
-            else if (!is_king_in_check(board, side))
-                execute_move(board, focusTile, tile);
+        if (turn == side && focusTile && focusTile.piece[0] == side && new_tile.piece[0] != side && is_move_legal(board, focusTile, new_tile) && !is_king_in_check(board, side))
+            execute_move(board, focusTile, new_tile);
+        else if (turn != side && focusTile && focusTile.piece[0] == side && is_move_legal(board, focusTile, new_tile))
+            select_pre_move(focusTile, new_tile);
+        else {
+            selectPiece(new_tile);
+            clear_pre_move(board);
         }
-        else
-            selectPiece(tile);
-        setStateBoard(board);
+        setStateBoard(boardRef.current);
     }
 
     useEffect(() => {
         if (socket) {
+
             const getGameSession = (data : GameSession) => {
                 console.log("getGameSession received");
-                const { username_white, username_black, turn, start_time, board: new_board } = data;
+                const { username_white, username_black, turn: server_turn, start_time, board: server_board } = data;
                 if (username_white == user.username) {
                     sideRef.current = 'w';
-                    opponent.current = username_black;
+                    opponentRef.current = username_black;
                 }
                 else {
                     sideRef.current = 'b';
-                    opponent.current = username_white;
+                    opponentRef.current = username_white;
                 }
-                turnRef.current = turn;
-                setStateBoard(new_board.map((array, row) => array.map((piece, col) => ({piece, row, col, ...DefaultTileFields}))));
+                turnRef.current = server_turn;
+                setStateBoard(server_board.map((array, row) => array.map((piece, col) => ({piece, row, col, ...DefaultTileFields}))));
             }
-            const updateBoard = (new_board : string[][], turn : string) => {
+
+            const updateBoard = (server_board : string[][], server_turn : string) => {
                 console.log("Board update received");
-                const converted_board : Tile[][] = new_board.map((array, row) => array.map((piece, col) => ({piece, row, col, ...DefaultTileFields})));
+                turnRef.current = server_turn;
+
+                const new_board : Tile[][] = server_board.map((array, row) => array.map((piece, col) => (piece[2] === 'x' ? {piece, row, col, ...DefaultTileFields, lastMove: true} : {piece, row, col, ...DefaultTileFields})));
                 if (focusTileRef.current)
-                    converted_board[focusTileRef.current.row][focusTileRef.current.col].focus = true;
-                setStateBoard(converted_board);
-                turnRef.current = turn;
-                if (preMoveRef.current && focusTileRef.current && true) {
-                    execute_move(boardRef.current, focusTileRef.current, preMoveRef.current);
+                    new_board[focusTileRef.current.row][focusTileRef.current.col].focus = true;
+
+                // This long variable passing is due to execution function expecting correct tile reference, same for is_move_possible... en passant
+                const preMove = preMoveRef.current;
+                if (preMove.length === 2 && turnRef.current === sideRef.current) {
+                    if (is_move_legal(new_board, new_board[preMove[0].row][preMove[0].col], new_board[preMove[1].row][preMove[1].col]) && !is_king_in_check(new_board, sideRef.current))
+                    execute_move(new_board, new_board[preMove[0].row][preMove[0].col], new_board[preMove[1].row][preMove[1].col]);
+                    preMoveRef.current = [];
                 }
+
+                setStateBoard(new_board);
             };
+
             socket.on('updateBoard', updateBoard);
             socket.on('getGameSession', getGameSession);
+
             if (props.game_id)
-            socket.emit('getGameSession', props.game_id);
+                socket.emit('getGameSession', props.game_id);
+
         return () => {
             socket.off('updateBoard', updateBoard);
             socket.off('getGameSession', getGameSession);
@@ -190,7 +214,7 @@ const Chessboard = (props : {game_id : string}) => {
 return (
     <div className="chessboard">
         <div className="ml-[30px]">
-            <div>{opponent.current}</div>
+            <div>{opponentRef.current}</div>
             <CapturedPieces board={stateBoard} side={sideRef.current}/>
         </div>
         {sideRef.current && stateBoard.map((row, original_i) => {
@@ -202,7 +226,7 @@ return (
                         const j = sideRef.current === 'w' ? original_j : 7 - original_j;
                         return (
                             <div key={j} onClick={() => handle_click_tile(boardRef.current[i][j])} className={`w-[var(--tile-size)] h-[var(--tile-size)] ${((j + i) % 2 == 0) ? "bg-light_tile" : "bg-dark_tile"}`}>
-                                <div className={`w-full h-full ${(stateBoard[i][j].focus && "bg-[var(--player-tile)]")} ${(stateBoard[i][j].preMove && "bg-[var(--preselect-tile)]")}`}>
+                                <div className={`w-full h-full ${((stateBoard[i][j].focus || stateBoard[i][j].lastMove) && "bg-[var(--player-tile)]")} ${(stateBoard[i][j].preMove && "bg-[var(--preselect-tile)]")}`}>
                                     {render_img(stateBoard[i][j].piece)}
                                 </div>
                             </div>
@@ -219,7 +243,7 @@ return (
             <div>{user.username}</div>
             <CapturedPieces board={stateBoard} side={sideRef.current === 'w' ? 'b' : 'w'}/>
         </div>
-        {isPromotionOpen.current && sideRef.current && <Promotion side={sideRef.current} update_promoted_piece={update_promoted_piece} />}
+        {isPromotionOpenRef.current && sideRef.current && <Promotion side={sideRef.current} update_promoted_piece={update_promoted_piece} />}
     </div>
   )
 }

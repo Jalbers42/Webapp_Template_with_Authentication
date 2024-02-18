@@ -40,7 +40,7 @@ const is_path_clear = (board : Tile[][], old_tile : Tile, new_tile : Tile) => {
 
 const is_pawn_move = (board : Tile[][], color : string, old_tile : Tile, new_tile : Tile) => {
 
-    const   new_field : string = board[new_tile.row][new_tile.col].piece;
+    // const   new_field : string = board[new_tile.row][new_tile.col].piece;
     let     direction : number;
 
     if (color == 'w')
@@ -49,13 +49,13 @@ const is_pawn_move = (board : Tile[][], color : string, old_tile : Tile, new_til
         direction = 1;
     if  (new_tile.row - old_tile.row == direction)
     {
-        if (old_tile.col == new_tile.col && new_field[0] == '0')
+        if (old_tile.col == new_tile.col && new_tile.piece[0] == '0')
             return (true);
         else if (Math.abs(old_tile.col - new_tile.col) == 1) {
-            if (new_field[0] != '0' && color != new_field[0])
+            if (new_tile.piece[0] != '0' && color != new_tile.piece[0])
                 return (true);
             else if (
-                new_field[0] == '0' &&
+                new_tile.piece[0] == '0' &&
                 board[new_tile.row - direction][new_tile.col].piece.slice(-2) == 'px' &&
                 board[new_tile.row + direction][new_tile.col].piece[2] == 'x'
             ) {
@@ -112,7 +112,7 @@ const is_king_move = (old_tile : Position, new_tile : Position) => {
     return (false);
 }
 
-export const is_move_possible = (board : Tile[][], old_tile : Tile, new_tile : Tile) => {
+export const is_move_legal = (board : Tile[][], old_tile : Tile, new_tile : Tile) => {
 
     const type = old_tile.piece[1];
     const color = old_tile.piece[0];
