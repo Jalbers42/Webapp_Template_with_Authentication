@@ -179,7 +179,12 @@ const Chessboard = (props : {game_id : string}) => {
                 console.log("Board update received");
                 turnRef.current = server_turn;
 
-                const new_board : Tile[][] = server_board.map((array, row) => array.map((piece, col) => (piece[2] === 'x' ? {piece, row, col, ...DefaultTileFields, lastMove: true} : {piece, row, col, ...DefaultTileFields})));
+                // const new_board : Tile[][] = server_board.map((array, row) => array.map((piece, col) => (piece[2] === 'x' ? {piece, row, col, ...DefaultTileFields, lastMove: true} : {piece, row, col, ...DefaultTileFields})));
+                const new_board : Tile[][] = server_board.map((array, row) => array.map((piece, col) => {
+                    const lastMove : boolean = piece[2] === 'x' ? true : false;
+                    const firstMove : boolean = piece[2] === 'y' ? true : false;
+                    return ({piece, row, col, ...DefaultTileFields, lastMove, firstMove})
+                }));
                 if (focusTileRef.current)
                     new_board[focusTileRef.current.row][focusTileRef.current.col].focus = true;
 

@@ -11,6 +11,7 @@ export interface Tile {
     piece: string;
     focus: boolean;
     lastMove: boolean;
+    firstMove: boolean;
     preMove: boolean;
     possibleMove: boolean;
 }
