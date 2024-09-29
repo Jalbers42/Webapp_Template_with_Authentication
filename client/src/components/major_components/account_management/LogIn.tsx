@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { FormTexts } from "@/types & constants/types"
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { ThirdPartyLogin } from "../ThirdParyLogin"
 
 export interface FormFieldConfig {
   name: keyof z.infer<typeof formSchema>;
@@ -93,8 +94,6 @@ export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen }: { isOpen: b
             {formTexts.description}
           </DialogDescription>
         </DialogHeader>
-        {
-          form &&
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
               {formFields?.map((fieldConfig) => (
@@ -152,7 +151,12 @@ export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen }: { isOpen: b
               </div>
             </form>
           </Form>
-        }
+        <div className="flex items-center py-4">
+          <hr className="flex-grow border-t border-muted-foreground" />
+          <span className="px-2 text-gray-500 text-sm">OR</span>
+          <hr className="flex-grow border-t border-muted-foreground" />
+        </div>
+        <ThirdPartyLogin />
       </DialogContent>
     </Dialog>
   )

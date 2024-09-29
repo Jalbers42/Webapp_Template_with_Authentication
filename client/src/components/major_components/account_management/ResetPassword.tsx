@@ -42,10 +42,12 @@ const formSchema = z.object({
   }),
 })
 
+
 export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsLogInOpen: (isOpen: boolean) => void}) {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { resetPasswordWithUsernameOrEmail } = useAuthContext()
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,12 +60,22 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: b
     try {
       await resetPasswordWithUsernameOrEmail(values.email);
       console.log("Password reset email sent");
-      setIsOpen(false);
+      setIsSuccess(true);
+      // setIsOpen(false);
     } catch (error) {
       console.error("Password reset failed.", error);
       setErrorMessage("Password reset failed. Please try again.");
     }
   }
+
+  const handleDialogChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setIsSuccess(false);
+      setErrorMessage(null);
+      form.reset({ email: "" });
+    }
+  };
 
   const handleGoBack = () => {
     setIsOpen(false);
@@ -71,19 +83,26 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: b
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">{formTexts.popup_button}</Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-[300px]">
-        <DialogHeader>
-          <div className="flex items-center space-x-2">
-            <button onClick={handleGoBack}>
-              <FaArrowLeft className="text-muted-foreground text-sm mt-1" />
-            </button>
-            <DialogTitle className="text-2xl">{formTexts.title}</DialogTitle>
+        {
+          !isSuccess &&
+          <DialogHeader>
+            <div className="flex items-center space-x-2">
+              <button onClick={handleGoBack}>
+                <FaArrowLeft className="text-muted-foreground text-sm mt-1" />
+              </button>
+              <DialogTitle className="text-2xl">{formTexts.title}</DialogTitle>
+            </div>
+          </DialogHeader>
+        }
+        {
+          isSuccess ?
+          <div>
+            <div className="font-bold">Success!</div>
+            <div className="">We've emailed you a link to reset your password. Check your inbox!</div>
           </div>
-        </DialogHeader>
+          :
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
               <FormField
@@ -108,12 +127,13 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: b
                   </FormItem>
                 )}
               />
-            <div className="text-xs font-medium text-destructive">{errorMessage}</div>
-            <div className="pt-4">
-              <Button type="submit" className="w-full">{formTexts.submit_button}</Button>
-            </div>
-          </form>
-        </Form>
+              <div className="text-xs font-medium text-destructive">{errorMessage}</div>
+              <div className="pt-4">
+                <Button type="submit" className="w-full">{formTexts.submit_button}</Button>
+              </div>
+            </form>
+          </Form>
+        }
       </DialogContent>
     </Dialog>
   )

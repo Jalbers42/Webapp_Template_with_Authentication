@@ -12,7 +12,7 @@
 
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
 import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebaseConfig"; 
 
@@ -31,6 +31,9 @@ const INITIAL_STATE = {
     logOut: async () => {},
     playAsGuest: async () => {},
     resetPasswordWithUsernameOrEmail: async () => {},
+    signInWithGoogle: async () => {},
+    signInWithFacebook: async () => {},
+    signInWithApple: async () => {},
     // socket: null
 }
 
@@ -42,6 +45,9 @@ type IContextType = {
     logOut: () => Promise<void>;
     playAsGuest: () => Promise<void>;
     resetPasswordWithUsernameOrEmail: (input: string) => Promise<void>;
+    signInWithGoogle: () => Promise<void>;
+    signInWithFacebook: () => Promise<void>;
+    signInWithApple: () => Promise<void>;
     // socket: any; // Replace this with your actual socket type if needed
 }
 
@@ -49,6 +55,9 @@ const AuthContext = createContext<IContextType>(INITIAL_STATE);
 
 export function AuthProvider({ children } : {children : React.ReactNode}) {
     const [user, setUser] = useState<IUser>(INITIAL_USER);
+    const googleProvider = new GoogleAuthProvider();
+    const facebookProvider = new FacebookAuthProvider();
+    const appleProvider = new OAuthProvider('apple.com');
 
     console.log("Auth Context Render");
     console.log("User: ", auth.currentUser);
@@ -149,6 +158,33 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
+    async function signInWithGoogle() {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            console.log('Google user signed in:', result.user);
+        } catch (error) {
+            console.error('Google sign-in error:', error);
+        }
+    }
+
+    async function signInWithFacebook() {
+        try {
+            const result = await signInWithPopup(auth, facebookProvider);
+            console.log('Facebook user signed in:', result.user);
+        } catch (error) {
+            console.error('Facebook sign-in error:', error);
+        }
+    }
+
+    async function signInWithApple() {
+        try {
+            const result = await signInWithPopup(auth, appleProvider);
+            console.log('Apple user signed in:', result.user);
+        } catch (error) {
+            console.error('Apple sign-in error:', error);
+        }
+    }
+
     // Check if user is already signed in (anonymous or regular)
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -174,6 +210,9 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         register,
         logOut,
         resetPasswordWithUsernameOrEmail,
+        signInWithGoogle,
+        signInWithFacebook,
+        signInWithApple,
         // socket,
     };
 
