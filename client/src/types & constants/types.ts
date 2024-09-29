@@ -1,13 +1,13 @@
 
 export type IUser = {
     username: string,
-    password: string,
-    rank: number,
+    uid: string;
+    isGuest: boolean;
 }
 
 export interface Tile {
     row: number;
-    col: number
+    col: number;
     piece: string;
     focus: boolean;
     lastMove: boolean;
@@ -32,4 +32,11 @@ export interface GameSession {
     turn: string;
     start_time: Date;
     board : string[][];
+}
+
+export interface FormTexts {
+    popup_button: string | null;
+    title: string;
+    description: string | null;
+    submit_button: string;
 }

@@ -1,4 +1,4 @@
-import PlayOnline from "@/components/shared/PlayOnline"
+import PlayOnline from "@/components/major_components/PlayOnline"
 
 const Home = () => {
   return (

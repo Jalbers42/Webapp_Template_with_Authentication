@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useEffect, useState } from "react"
-// import { useUserContext } from '@/context/AuthContext'
+// import { useAuthContext } from '@/context/AuthContext'
 import { useWebSocketContext } from "@/context/WebSocketContext"
               
 const Chat = () => {

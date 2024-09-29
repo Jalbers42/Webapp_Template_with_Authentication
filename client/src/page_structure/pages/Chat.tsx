@@ -1,4 +1,4 @@
-import Chat from "@/components/shared/Chat/Chat"
+import Chat from "@/components/major_components/Chat/Chat"
 
 const TestPage = () => {
   return (

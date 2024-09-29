@@ -15,7 +15,7 @@ import { render_img } from "./render_image";
 import { is_move_legal } from "./move_rules";
 import { GameSession, Position, Tile } from "@/types & constants/types";
 import { useWebSocketContext } from "@/context/WebSocketContext";
-import { useUserContext } from "@/context/AuthContext";
+import { useAuthContext } from "@/context/AuthContext";
 import CapturedPieces from "./CapturedPieces";
 import Promotion from "./Promotion";
 import { COLUMNS, DefaultTileFields } from "@/types & constants/constants";
@@ -25,7 +25,7 @@ const Chessboard = (props : {game_id : string}) => {
 
     console.log("Chessboard Render");
 
-    const { user } = useUserContext();
+    const { user } = useAuthContext();
     const { socket } = useWebSocketContext();
 
     const [stateBoard, setStateBoard] = useState<Tile[][]>([]);

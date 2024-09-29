@@ -1,4 +1,4 @@
-import Chessboard from "@/components/shared/Chessboard/Chessboard"
+import Chessboard from "@/components/major_components/Chessboard/Chessboard"
 import { useParams } from "react-router-dom";
 
 const Game = () => {

@@ -1,12 +1,13 @@
+import { auth } from "@/config/firebaseConfig";
 import { Button } from "../ui/button"
-import { useUserContext } from '@/context/AuthContext'
 import { useWebSocketContext } from "@/context/WebSocketContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "@/context/AuthContext";
 
 const PlayOnline = () => {
 
-    const   { user } = useUserContext();
+    const { user } = useAuthContext()
     const   { socket } = useWebSocketContext();
     let     navigate = useNavigate();
 
@@ -34,6 +35,7 @@ const PlayOnline = () => {
   return (
     <div className="w-full h-full border flex flex-col gap-5 items-center justify-center">
         <h2>{user.username}</h2>
+        <h2>{user.uid}</h2>
         <Button onClick={addToQueue}>
             Play
         </Button>
