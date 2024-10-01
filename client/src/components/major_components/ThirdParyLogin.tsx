@@ -2,18 +2,17 @@ import { useAuthContext } from "@/context/AuthContext";
 import { Button } from "../ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple, FaFacebook } from "react-icons/fa";
-import { useState } from "react";
-import { SelectUsername } from "./account_management/SelectUsername";
 
-export function ThirdPartyLogin() {
+export function ThirdPartyLogin({ setIsLogInOpen, setIsSelectUsernameOpen } : { setIsLogInOpen: (isOpen: boolean) => void; setIsSelectUsernameOpen : (isOpen: boolean) => void;}) {
 
     const { sign_in_with_apple, sign_in_with_google, sign_in_with_facebook } = useAuthContext()
-    const [isSelectUsernameOpen, setIsSelectUsernameOpen] = useState(false)
 
-    const handle_log_in = async (loginFunction: () => Promise<void>) => {
+    const handle_log_in = async (loginFunction: () => Promise<boolean>) => {
         try {
-            await loginFunction()
-            setIsSelectUsernameOpen(true)
+            setIsLogInOpen(false)
+            const is_new_user: boolean = await loginFunction()
+            if (is_new_user)
+                setIsSelectUsernameOpen(true)
         } catch (error) {
             console.error('Login error', error);
         }
@@ -48,7 +47,6 @@ export function ThirdPartyLogin() {
             <FaApple className="absolute left-4 text-lg" /> {/* Logo on the left */}
             <span className="mx-auto">Log in with Apple</span> {/* Text centered */}
         </Button>
-        <SelectUsername isOpen={isSelectUsernameOpen} setIsOpen={setIsSelectUsernameOpen} />
     </div>
   );
 }

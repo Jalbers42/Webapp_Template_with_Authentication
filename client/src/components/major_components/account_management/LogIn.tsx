@@ -52,7 +52,7 @@ const formSchema = z.object({
   }),
 })
 
-export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsResetPasswordOpen : (isOpen: boolean) => void }) {
+export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen, setIsSelectUsernameOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsResetPasswordOpen : (isOpen: boolean) => void; setIsSelectUsernameOpen : (isOpen: boolean) => void; }) {
 
   const { log_in } = useAuthContext()
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -156,7 +156,7 @@ export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen }: { isOpen: b
           <span className="px-2 text-gray-500 text-sm">OR</span>
           <hr className="flex-grow border-t border-muted-foreground" />
         </div>
-        <ThirdPartyLogin />
+        <ThirdPartyLogin setIsLogInOpen={setIsOpen} setIsSelectUsernameOpen={setIsSelectUsernameOpen}/>
       </DialogContent>
     </Dialog>
   )

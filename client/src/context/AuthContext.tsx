@@ -13,7 +13,7 @@
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
-import { collection, query, where, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebaseConfig"; 
 
 // to-do I might not need to save the user info in the context and firbase already stores user object --> auth.currentUser
@@ -31,9 +31,9 @@ const INITIAL_STATE = {
     logOut: async () => {},
     play_as_guest: async () => {},
     reset_password_with_username_or_email: async () => {},
-    sign_in_with_google: async () => {},
-    sign_in_with_facebook: async () => {},
-    sign_in_with_apple: async () => {},
+    sign_in_with_google: async () => false,
+    sign_in_with_facebook: async () => false,
+    sign_in_with_apple: async () => false,
     edit_current_users_username: async () => {},
     // socket: null
 }
@@ -46,9 +46,9 @@ type IContextType = {
     logOut: () => Promise<void>;
     play_as_guest: () => Promise<void>;
     reset_password_with_username_or_email: (input: string) => Promise<void>;
-    sign_in_with_google: () => Promise<void>;
-    sign_in_with_facebook: () => Promise<void>;
-    sign_in_with_apple: () => Promise<void>;
+    sign_in_with_google: () => Promise<boolean>;
+    sign_in_with_facebook: () => Promise<boolean>;
+    sign_in_with_apple: () => Promise<boolean>;
     edit_current_users_username: (new_username: string) => Promise<void>;
     // socket: any; // Replace this with your actual socket type if needed
 }
@@ -83,7 +83,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             setUser({
-                username: result.user.email || `user_${result.user.uid.substring(0, 8)}`,
+                username: result.user.displayName || `user_${result.user.uid.substring(0, 8)}`,
                 uid: result.user.uid,
                 isGuest: false,
             });
@@ -160,32 +160,101 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
-    async function sign_in_with_google() {
-        try {
-            const result = await signInWithPopup(auth, googleProvider);
-            console.log('Google user signed in:', result.user);
-        } catch (error) {
-            console.error('Google sign-in error:', error);
-        }
-    }
+async function sign_in_with_google() {
+    try {
+        let is_new_user: boolean = false;
+        const result = await signInWithPopup(auth, googleProvider)
+        const user = result.user;
+        const userRef = doc(db, "users", user.uid)
 
-    async function sign_in_with_facebook() {
-        try {
-            const result = await signInWithPopup(auth, facebookProvider);
-            console.log('Facebook user signed in:', result.user);
-        } catch (error) {
-            console.error('Facebook sign-in error:', error);
+        const userSnapshot = await getDoc(userRef)
+        if (!userSnapshot.exists()) {
+            await setDoc(userRef, {
+                username: user.displayName || "Anonymous",
+                email: user.email,
+                uid: user.uid,
+                createdAt: new Date(),
+            });
+            is_new_user = true
         }
+        setUser({
+            username: user.displayName || "Anonymous",
+            uid: user.uid,
+            isGuest: false,
+        });
+        console.log('Google user signed in:', user)
+        return (is_new_user)
+    } catch (error) {
+        console.error('Google sign-in error:', error)
+        return (false)
     }
+}
 
-    async function sign_in_with_apple() {
-        try {
-            const result = await signInWithPopup(auth, appleProvider);
-            console.log('Apple user signed in:', result.user);
-        } catch (error) {
-            console.error('Apple sign-in error:', error);
+// Facebook Sign-In
+async function sign_in_with_facebook() {
+    try {
+        let is_new_user: boolean = false;
+        const result = await signInWithPopup(auth, facebookProvider);
+        const user = result.user;
+        const userRef = doc(db, "users", user.uid);
+
+        const userSnapshot = await getDoc(userRef);
+        if (!userSnapshot.exists()) {
+            await setDoc(userRef, {
+                username: user.displayName || "Anonymous", 
+                email: user.email,
+                uid: user.uid,
+                createdAt: new Date(),
+            });
+            is_new_user = true
         }
+
+        setUser({
+            username: user.displayName || "Anonymous",
+            uid: user.uid,
+            isGuest: false,
+        });
+
+        console.log('Facebook user signed in:', user);
+        return (is_new_user);
+    } catch (error) {
+        console.error('Facebook sign-in error:', error);
+        return (false)
     }
+}
+
+// Apple Sign-In
+async function sign_in_with_apple() {
+    try {
+        let is_new_user: boolean = false;
+        const result = await signInWithPopup(auth, appleProvider);
+        const user = result.user;
+        const userRef = doc(db, "users", user.uid);
+
+        const userSnapshot = await getDoc(userRef);
+        if (!userSnapshot.exists()) {
+            await setDoc(userRef, {
+                username: user.displayName || "Anonymous",
+                email: user.email,
+                uid: user.uid,
+                createdAt: new Date(),
+            });
+            is_new_user = true
+        }
+
+        setUser({
+            username: user.displayName || "Anonymous",
+            uid: user.uid,
+            isGuest: false,
+        });
+
+        console.log('Apple user signed in:', user);
+        return (is_new_user);
+    } catch (error) {
+        console.error('Apple sign-in error:', error);
+        return (false)
+    }
+}
 
     async function edit_current_users_username(new_username:string) {
         if (!auth.currentUser) {
@@ -221,7 +290,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
             if (firebaseUser) {
                 setUser({
-                    username: firebaseUser.email || `guest_${firebaseUser.uid.substring(0, 8)}`,
+                    username: firebaseUser.displayName || "",
                     uid: firebaseUser.uid,
                     isGuest: firebaseUser.isAnonymous,
                 });
