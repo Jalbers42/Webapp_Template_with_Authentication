@@ -13,7 +13,7 @@
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
-import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebaseConfig"; 
 
 // to-do I might not need to save the user info in the context and firbase already stores user object --> auth.currentUser
@@ -26,28 +26,30 @@ const INITIAL_USER = {
 const INITIAL_STATE = {
     user: INITIAL_USER,
     setUser: () => {},
-    logIn: async () => {},
+    log_in: async () => {},
     register: async () => {},
     logOut: async () => {},
-    playAsGuest: async () => {},
-    resetPasswordWithUsernameOrEmail: async () => {},
-    signInWithGoogle: async () => {},
-    signInWithFacebook: async () => {},
-    signInWithApple: async () => {},
+    play_as_guest: async () => {},
+    reset_password_with_username_or_email: async () => {},
+    sign_in_with_google: async () => {},
+    sign_in_with_facebook: async () => {},
+    sign_in_with_apple: async () => {},
+    edit_current_users_username: async () => {},
     // socket: null
 }
 
 type IContextType = {
     user: IUser;
     setUser: React.Dispatch<React.SetStateAction<IUser>>;
-    logIn: (username: string, password: string) => Promise<void>;
+    log_in: (username: string, password: string) => Promise<void>;
     register: (email: string, password: string, username: string) => Promise<void>;
     logOut: () => Promise<void>;
-    playAsGuest: () => Promise<void>;
-    resetPasswordWithUsernameOrEmail: (input: string) => Promise<void>;
-    signInWithGoogle: () => Promise<void>;
-    signInWithFacebook: () => Promise<void>;
-    signInWithApple: () => Promise<void>;
+    play_as_guest: () => Promise<void>;
+    reset_password_with_username_or_email: (input: string) => Promise<void>;
+    sign_in_with_google: () => Promise<void>;
+    sign_in_with_facebook: () => Promise<void>;
+    sign_in_with_apple: () => Promise<void>;
+    edit_current_users_username: (new_username: string) => Promise<void>;
     // socket: any; // Replace this with your actual socket type if needed
 }
 
@@ -63,7 +65,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     console.log("User: ", auth.currentUser);
 
     // Initialize Firebase anonymous auth for guest users
-    const playAsGuest = async () => {
+    const play_as_guest = async () => {
         try {
             const result = await signInAnonymously(auth);
             setUser({
@@ -77,7 +79,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     };
 
     // Login function for registered users
-    const logIn = async (email: string, password: string) => {
+    const log_in = async (email: string, password: string) => {
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             setUser({
@@ -138,7 +140,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         return emailRegex.test(input);
     };
 
-    const resetPasswordWithUsernameOrEmail = async (input: string) => {
+    const reset_password_with_username_or_email = async (input: string) => {
         try {
             let email = input;
 
@@ -158,7 +160,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
-    async function signInWithGoogle() {
+    async function sign_in_with_google() {
         try {
             const result = await signInWithPopup(auth, googleProvider);
             console.log('Google user signed in:', result.user);
@@ -167,7 +169,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     }
 
-    async function signInWithFacebook() {
+    async function sign_in_with_facebook() {
         try {
             const result = await signInWithPopup(auth, facebookProvider);
             console.log('Facebook user signed in:', result.user);
@@ -176,13 +178,42 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     }
 
-    async function signInWithApple() {
+    async function sign_in_with_apple() {
         try {
             const result = await signInWithPopup(auth, appleProvider);
             console.log('Apple user signed in:', result.user);
         } catch (error) {
             console.error('Apple sign-in error:', error);
         }
+    }
+
+    async function edit_current_users_username(new_username:string) {
+        if (!auth.currentUser) {
+            throw new Error("No authenticated user found");
+        }
+        const userId = auth.currentUser.uid;
+
+        // Step 1: Check if the username is already taken
+        const q = query(collection(db, "users"), where("username", "==", new_username));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            throw new Error("Username is already taken");
+        }
+
+        // Step 2: Update the username in Firestore
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, { username: new_username});
+
+        // Step 3: Update the displayName in Firebase Auth
+        await updateProfile(auth.currentUser, { displayName: new_username });
+
+        // Step 4: Update the local user state in the AuthContext
+        setUser((prevUser) => ({
+            ...prevUser,
+            username: new_username,
+        }));
+
+        console.log(`Username successfully updated to ${new_username}`);
     }
 
     // Check if user is already signed in (anonymous or regular)
@@ -205,14 +236,15 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     const value = {
         user,
         setUser,
-        playAsGuest,
-        logIn,
+        play_as_guest,
+        log_in,
         register,
         logOut,
-        resetPasswordWithUsernameOrEmail,
-        signInWithGoogle,
-        signInWithFacebook,
-        signInWithApple,
+        reset_password_with_username_or_email,
+        sign_in_with_google,
+        sign_in_with_facebook,
+        sign_in_with_apple,
+        edit_current_users_username,
         // socket,
     };
 

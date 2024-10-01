@@ -46,7 +46,7 @@ const formSchema = z.object({
 export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsLogInOpen: (isOpen: boolean) => void}) {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { resetPasswordWithUsernameOrEmail } = useAuthContext()
+  const { reset_password_with_username_or_email } = useAuthContext()
   const [isSuccess, setIsSuccess] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -58,7 +58,7 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: b
   
   async function handleFormSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await resetPasswordWithUsernameOrEmail(values.email);
+      await reset_password_with_username_or_email(values.email);
       console.log("Password reset email sent");
       setIsSuccess(true);
       // setIsOpen(false);

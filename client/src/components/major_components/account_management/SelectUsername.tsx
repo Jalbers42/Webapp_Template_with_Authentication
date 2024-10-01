@@ -1,0 +1,89 @@
+import { useForm } from "react-hook-form"
+import { useAuthContext } from "@/context/AuthContext"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+
+const formSchema = z.object({
+  username: z.string().min(2, {
+    message: "Username must be at least 2 characters.",
+  }),
+})
+
+export function SelectUsername({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void;}) {
+
+  const { edit_current_users_username } = useAuthContext()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+    },
+  })
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await edit_current_users_username(values.username);
+      console.log("User successfully logged out");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Log out failed", error);
+      setErrorMessage("Log out failed. Please try again.");
+    }
+  }
+
+  return (
+     <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) setErrorMessage(null); }}>
+      <DialogContent className="sm:max-w-[300px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Choose your Username</DialogTitle>
+          <DialogDescription>
+
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  key="username"
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="username">Username</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="username"
+                          type="text"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            <div className="text-sm font-medium text-destructive">{errorMessage}</div>
+            <Button type="submit" className="w-full">Submit</Button>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>   
+  )
+}

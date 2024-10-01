@@ -54,7 +54,7 @@ const formSchema = z.object({
 
 export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsResetPasswordOpen : (isOpen: boolean) => void }) {
 
-  const { logIn } = useAuthContext()
+  const { log_in } = useAuthContext()
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
@@ -68,7 +68,7 @@ export function LogIn({ isOpen, setIsOpen, setIsResetPasswordOpen }: { isOpen: b
   
   async function handleFormSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await logIn(values.email, values.password);
+      await log_in(values.email, values.password);
       console.log("User successfully logged in");
       setIsOpen(false);
     } catch (error) {
