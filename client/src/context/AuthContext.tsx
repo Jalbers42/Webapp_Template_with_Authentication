@@ -14,7 +14,7 @@ import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
 import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/config/firebaseConfig"; 
+import { auth, db } from "@/config/firebaseConfig";
 import { SERVER_URL } from "@/types & constants/constants";
 
 // to-do I might not need to save the user info in the context and firbase already stores user object --> auth.currentUser
@@ -22,7 +22,7 @@ const INITIAL_USER = {
     username: "",
     uid: "",
     elo: 0,
-    isGuest: true, 
+    isGuest: true,
 }
 
 const INITIAL_STATE = {
@@ -62,10 +62,10 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     const googleProvider = new GoogleAuthProvider();
     const facebookProvider = new FacebookAuthProvider();
     const appleProvider = new OAuthProvider('apple.com');
-    
+
     console.log("Auth Context Render");
     console.log("User: ", auth.currentUser);
-    
+
     // Initialize Firebase anonymous auth for guest users
     const play_as_guest = async () => {
         try {
@@ -76,7 +76,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             console.error("Error signing in anonymously", error);
         }
     };
-    
+
     // Login function for registered users
     const log_in = async (email: string, password: string) => {
         try {
@@ -86,7 +86,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             throw new Error("Invalid email or password");
         }
     };
-    
+
     const register = async (email: string, password: string, username: string) => {
         try {
             const response = await fetch(`${SERVER_URL}/firebase/register`, {
@@ -98,8 +98,10 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                     username,
                 }),
             });
-            if (!response.ok)
-                throw new Error(`Registration failed: ${response.statusText}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Registration failed');
+            }
             const data = await response.json();
             console.log('User successfully registered:', data);
             return data;
@@ -108,7 +110,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             throw error;
         }
     };
-    
+
     const logOut = async () => {
         try {
             await signOut(auth);
@@ -117,17 +119,17 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             console.error("Error logging out", error);
         }
     };
-    
+
     // to-do improve this
     const isValidEmail = (input: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(input);
     };
-    
+
     const reset_password_with_username_or_email = async (input: string) => {
         try {
             let email = input;
-            
+
             if (!isValidEmail(input)) {
                 const q = query(collection(db, "users"), where("username", "==", input));
                 const querySnapshot = await getDocs(q);
@@ -143,14 +145,14 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             throw error;
         }
     };
-    
+
     async function sign_in_with_google() {
         try {
             let is_new_user: boolean = false;
             const result = await signInWithPopup(auth, googleProvider)
             const user = result.user;
             const userRef = doc(db, "users", user.uid)
-            
+
             const userSnapshot = await getDoc(userRef)
             if (!userSnapshot.exists()) {
                 await setDoc(userRef, {
@@ -168,7 +170,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             return (false)
         }
     }
-    
+
     // Facebook Sign-In
     async function sign_in_with_facebook() {
         try {
@@ -176,34 +178,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             const result = await signInWithPopup(auth, facebookProvider);
             const user = result.user;
             const userRef = doc(db, "users", user.uid);
-            
-            const userSnapshot = await getDoc(userRef);
-            if (!userSnapshot.exists()) {
-                await setDoc(userRef, {
-                    username: user.displayName || "Anonymous", 
-                    email: user.email,
-                    uid: user.uid,
-                    createdAt: new Date(),
-                });
-                is_new_user = true
-            }
-            
-            console.log('Facebook user signed in:', user);
-            return (is_new_user);
-        } catch (error) {
-            console.error('Facebook sign-in error:', error);
-            return (false)
-        }
-    }
-    
-    // Apple Sign-In
-    async function sign_in_with_apple() {
-        try {
-            let is_new_user: boolean = false;
-            const result = await signInWithPopup(auth, appleProvider);
-            const user = result.user;
-            const userRef = doc(db, "users", user.uid);
-            
+
             const userSnapshot = await getDoc(userRef);
             if (!userSnapshot.exists()) {
                 await setDoc(userRef, {
@@ -214,7 +189,34 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                 });
                 is_new_user = true
             }
-            
+
+            console.log('Facebook user signed in:', user);
+            return (is_new_user);
+        } catch (error) {
+            console.error('Facebook sign-in error:', error);
+            return (false)
+        }
+    }
+
+    // Apple Sign-In
+    async function sign_in_with_apple() {
+        try {
+            let is_new_user: boolean = false;
+            const result = await signInWithPopup(auth, appleProvider);
+            const user = result.user;
+            const userRef = doc(db, "users", user.uid);
+
+            const userSnapshot = await getDoc(userRef);
+            if (!userSnapshot.exists()) {
+                await setDoc(userRef, {
+                    username: user.displayName || "Anonymous",
+                    email: user.email,
+                    uid: user.uid,
+                    createdAt: new Date(),
+                });
+                is_new_user = true
+            }
+
             console.log('Apple user signed in:', user);
             return (is_new_user);
         } catch (error) {
@@ -222,36 +224,36 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             return (false)
         }
     }
-    
+
     async function edit_current_users_username(new_username:string) {
         if (!auth.currentUser) {
             throw new Error("No authenticated user found");
         }
         const userId = auth.currentUser.uid;
-        
+
         // Step 1: Check if the username is already taken
         const q = query(collection(db, "users"), where("username", "==", new_username));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
             throw new Error("Username is already taken");
         }
-        
+
         // Step 2: Update the username in Firestore
         const userRef = doc(db, "users", userId);
         await updateDoc(userRef, { username: new_username});
-        
+
         // Step 3: Update the displayName in Firebase Auth
         await updateProfile(auth.currentUser, { displayName: new_username });
-        
+
         // Step 4: Update the local user state in the AuthContext
         setUser((prevUser) => ({
             ...prevUser,
             username: new_username,
         }));
-        
+
         console.log(`Username successfully updated to ${new_username}`);
     }
-    
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
@@ -267,7 +269,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         });
         return () => unsubscribe();
     }, []);
-    
+
     const value = {
         user,
         setUser,
@@ -282,10 +284,10 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         edit_current_users_username,
         // socket,
     };
-    
+
     return (
         <AuthContext.Provider value={value}>
-        {children}
+            {children}
         </AuthContext.Provider>
     )
 }
