@@ -22,17 +22,20 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { FormTexts } from "@/types & constants/types"
+import { ThirdPartyLogin } from "../ThirdParyLogin"
+import { FaEnvelope, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa"
 
 export interface FormFieldConfig {
   name: keyof z.infer<typeof formSchema>;
   label: string;
   type: string;
+  placeholder: string;
 }
 
 const formFields: FormFieldConfig[] = [
-  { name: "email", label: "Email", type: "text" },
-  { name: "username", label: "Username", type: "text" },
-  { name: "password", label: "Password", type: "password" },
+  { name: "email", label: "Email", type: "text", placeholder: "Email" },
+  { name: "username", label: "Username", type: "text", placeholder: "Username" },
+  { name: "password", label: "Password", type: "password", placeholder: "Password" },
 ];
 
 const formTexts: FormTexts = {
@@ -54,11 +57,12 @@ const formSchema = z.object({
   }),
 })
 
-export function SignUp() {
+export function SignUp({ setIsSelectUsernameOpen }: { setIsSelectUsernameOpen : (isOpen: boolean) => void; }) {
 
   const { register } = useAuthContext()
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,35 +96,64 @@ export function SignUp() {
             {formTexts.description}
           </DialogDescription>
         </DialogHeader>
-        {
-          form &&
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-              {formFields?.map((fieldConfig) => (
-                <FormField
-                  key={fieldConfig.name}
-                  control={form.control}
-                  name={fieldConfig.name}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor={fieldConfig.name}>{fieldConfig.label}</FormLabel>
-                      <FormControl>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+            {formFields?.map((fieldConfig) => (
+              <FormField
+                key={fieldConfig.name}
+                control={form.control}
+                name={fieldConfig.name}
+                render={({ field }) => (
+                  <FormItem>
+                    {/* <FormLabel htmlFor={fieldConfig.name}>{fieldConfig.label}</FormLabel> */}
+                    <FormControl>
+                      <div className="relative">
+                        {fieldConfig.name === "email" && (
+                          <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                        )}
+                        {fieldConfig.name === "username" && (
+                          <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                        )}
+                        {fieldConfig.name === "password" && (
+                          <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                        )}
                         <Input
                           id={fieldConfig.name}
-                          type={fieldConfig.type}
+                          type={
+                            fieldConfig.name === "password" && passwordVisible
+                              ? "text"
+                              : fieldConfig.type
+                          }
+                          className="pl-10 pr-10" 
+                          placeholder={fieldConfig.placeholder}
                           {...field}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-              <div className="text-sm font-medium text-destructive">{errorMessage}</div>
-              <Button type="submit" className="w-full">{formTexts.submit_button}</Button>
-            </form>
-          </Form>
-        }
+                        {fieldConfig.name === "password" && (
+                          <button
+                            type="button"
+                            onClick={() => setPasswordVisible(!passwordVisible)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                          >
+                            {passwordVisible ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+            <div className="text-sm font-medium text-destructive">{errorMessage}</div>
+            <Button type="submit" className="w-full">{formTexts.submit_button}</Button>
+          </form>
+        </Form>
+        <div className="flex items-center py-4">
+          <hr className="flex-grow border-t border-muted-foreground" />
+          <span className="px-2 text-gray-500 text-sm">OR</span>
+          <hr className="flex-grow border-t border-muted-foreground" />
+        </div>
+        <ThirdPartyLogin setIsLogInOpen={setIsOpen} setIsSelectUsernameOpen={setIsSelectUsernameOpen}/>
       </DialogContent>
     </Dialog>
   )

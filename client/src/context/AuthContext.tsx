@@ -12,14 +12,16 @@
 
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
 import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebaseConfig"; 
+import { SERVER_URL } from "@/types & constants/constants";
 
 // to-do I might not need to save the user info in the context and firbase already stores user object --> auth.currentUser
 const INITIAL_USER = {
     username: "",
     uid: "",
+    elo: 0,
     isGuest: true, 
 }
 
@@ -60,90 +62,72 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     const googleProvider = new GoogleAuthProvider();
     const facebookProvider = new FacebookAuthProvider();
     const appleProvider = new OAuthProvider('apple.com');
-
+    
     console.log("Auth Context Render");
     console.log("User: ", auth.currentUser);
-
+    
     // Initialize Firebase anonymous auth for guest users
     const play_as_guest = async () => {
         try {
             const result = await signInAnonymously(auth);
-            setUser({
-                username: `guest_${result.user.uid.substring(0, 8)}`, // Generate guest username
-                uid: result.user.uid,
-                isGuest: true,
-            });
+            const guest_username = `guest_${result.user.uid.substring(0, 8)}`
+            await updateProfile(result.user, { displayName: guest_username});
         } catch (error) {
             console.error("Error signing in anonymously", error);
         }
     };
-
+    
     // Login function for registered users
     const log_in = async (email: string, password: string) => {
         try {
-            const result = await signInWithEmailAndPassword(auth, email, password);
-            setUser({
-                username: result.user.displayName || `user_${result.user.uid.substring(0, 8)}`,
-                uid: result.user.uid,
-                isGuest: false,
-            });
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
             console.error("Error logging in", error);
             throw new Error("Invalid email or password");
         }
     };
-
-    // Register function in AuthContext with unique username check
+    
     const register = async (email: string, password: string, username: string) => {
         try {
-            const q = query(collection(db, "users"), where("username", "==", username));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                throw new Error("Username is already taken");
-            }
-
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-            await updateProfile(userCredential.user, { displayName: username });
-
-            await setDoc(doc(db, "users", userCredential.user.uid), {
-                username: username,
-                email: email,
-                uid: userCredential.user.uid,
-                createdAt: new Date(),
+            const response = await fetch(`${SERVER_URL}/firebase/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    username,
+                }),
             });
-
-            setUser({
-                username: username,
-                uid: userCredential.user.uid,
-                isGuest: false,
-            });
-
+            if (!response.ok)
+                throw new Error(`Registration failed: ${response.statusText}`);
+            const data = await response.json();
+            console.log('User successfully registered:', data);
+            return data;
         } catch (error) {
-            console.error("Error during registration", error);
-            throw error; // Rethrow the error so it can be handled in the UI
+            console.error('Error registering user:', error);
+            throw error;
         }
     };
-
-    // Logout function for registered users
+    
     const logOut = async () => {
         try {
-        await signOut(auth); // Sign out the user from Firebase
-        setUser(INITIAL_USER); // Reset user state to initial state
+            await signOut(auth);
+            setUser(INITIAL_USER);
         } catch (error) {
-        console.error("Error logging out", error);
+            console.error("Error logging out", error);
         }
     };
-
+    
+    // to-do improve this
     const isValidEmail = (input: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(input);
     };
-
+    
     const reset_password_with_username_or_email = async (input: string) => {
         try {
             let email = input;
-
+            
             if (!isValidEmail(input)) {
                 const q = query(collection(db, "users"), where("username", "==", input));
                 const querySnapshot = await getDocs(q);
@@ -159,149 +143,131 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             throw error;
         }
     };
-
-async function sign_in_with_google() {
-    try {
-        let is_new_user: boolean = false;
-        const result = await signInWithPopup(auth, googleProvider)
-        const user = result.user;
-        const userRef = doc(db, "users", user.uid)
-
-        const userSnapshot = await getDoc(userRef)
-        if (!userSnapshot.exists()) {
-            await setDoc(userRef, {
-                username: user.displayName || "Anonymous",
-                email: user.email,
-                uid: user.uid,
-                createdAt: new Date(),
-            });
-            is_new_user = true
+    
+    async function sign_in_with_google() {
+        try {
+            let is_new_user: boolean = false;
+            const result = await signInWithPopup(auth, googleProvider)
+            const user = result.user;
+            const userRef = doc(db, "users", user.uid)
+            
+            const userSnapshot = await getDoc(userRef)
+            if (!userSnapshot.exists()) {
+                await setDoc(userRef, {
+                    username: user.displayName || "Anonymous",
+                    email: user.email,
+                    uid: user.uid,
+                    createdAt: new Date(),
+                });
+                is_new_user = true
+            }
+            console.log('Google user signed in:', user)
+            return (is_new_user)
+        } catch (error) {
+            console.error('Google sign-in error:', error)
+            return (false)
         }
-        setUser({
-            username: user.displayName || "Anonymous",
-            uid: user.uid,
-            isGuest: false,
-        });
-        console.log('Google user signed in:', user)
-        return (is_new_user)
-    } catch (error) {
-        console.error('Google sign-in error:', error)
-        return (false)
     }
-}
-
-// Facebook Sign-In
-async function sign_in_with_facebook() {
-    try {
-        let is_new_user: boolean = false;
-        const result = await signInWithPopup(auth, facebookProvider);
-        const user = result.user;
-        const userRef = doc(db, "users", user.uid);
-
-        const userSnapshot = await getDoc(userRef);
-        if (!userSnapshot.exists()) {
-            await setDoc(userRef, {
-                username: user.displayName || "Anonymous", 
-                email: user.email,
-                uid: user.uid,
-                createdAt: new Date(),
-            });
-            is_new_user = true
+    
+    // Facebook Sign-In
+    async function sign_in_with_facebook() {
+        try {
+            let is_new_user: boolean = false;
+            const result = await signInWithPopup(auth, facebookProvider);
+            const user = result.user;
+            const userRef = doc(db, "users", user.uid);
+            
+            const userSnapshot = await getDoc(userRef);
+            if (!userSnapshot.exists()) {
+                await setDoc(userRef, {
+                    username: user.displayName || "Anonymous", 
+                    email: user.email,
+                    uid: user.uid,
+                    createdAt: new Date(),
+                });
+                is_new_user = true
+            }
+            
+            console.log('Facebook user signed in:', user);
+            return (is_new_user);
+        } catch (error) {
+            console.error('Facebook sign-in error:', error);
+            return (false)
         }
-
-        setUser({
-            username: user.displayName || "Anonymous",
-            uid: user.uid,
-            isGuest: false,
-        });
-
-        console.log('Facebook user signed in:', user);
-        return (is_new_user);
-    } catch (error) {
-        console.error('Facebook sign-in error:', error);
-        return (false)
     }
-}
-
-// Apple Sign-In
-async function sign_in_with_apple() {
-    try {
-        let is_new_user: boolean = false;
-        const result = await signInWithPopup(auth, appleProvider);
-        const user = result.user;
-        const userRef = doc(db, "users", user.uid);
-
-        const userSnapshot = await getDoc(userRef);
-        if (!userSnapshot.exists()) {
-            await setDoc(userRef, {
-                username: user.displayName || "Anonymous",
-                email: user.email,
-                uid: user.uid,
-                createdAt: new Date(),
-            });
-            is_new_user = true
+    
+    // Apple Sign-In
+    async function sign_in_with_apple() {
+        try {
+            let is_new_user: boolean = false;
+            const result = await signInWithPopup(auth, appleProvider);
+            const user = result.user;
+            const userRef = doc(db, "users", user.uid);
+            
+            const userSnapshot = await getDoc(userRef);
+            if (!userSnapshot.exists()) {
+                await setDoc(userRef, {
+                    username: user.displayName || "Anonymous",
+                    email: user.email,
+                    uid: user.uid,
+                    createdAt: new Date(),
+                });
+                is_new_user = true
+            }
+            
+            console.log('Apple user signed in:', user);
+            return (is_new_user);
+        } catch (error) {
+            console.error('Apple sign-in error:', error);
+            return (false)
         }
-
-        setUser({
-            username: user.displayName || "Anonymous",
-            uid: user.uid,
-            isGuest: false,
-        });
-
-        console.log('Apple user signed in:', user);
-        return (is_new_user);
-    } catch (error) {
-        console.error('Apple sign-in error:', error);
-        return (false)
     }
-}
-
+    
     async function edit_current_users_username(new_username:string) {
         if (!auth.currentUser) {
             throw new Error("No authenticated user found");
         }
         const userId = auth.currentUser.uid;
-
+        
         // Step 1: Check if the username is already taken
         const q = query(collection(db, "users"), where("username", "==", new_username));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
             throw new Error("Username is already taken");
         }
-
+        
         // Step 2: Update the username in Firestore
         const userRef = doc(db, "users", userId);
         await updateDoc(userRef, { username: new_username});
-
+        
         // Step 3: Update the displayName in Firebase Auth
         await updateProfile(auth.currentUser, { displayName: new_username });
-
+        
         // Step 4: Update the local user state in the AuthContext
         setUser((prevUser) => ({
             ...prevUser,
             username: new_username,
         }));
-
+        
         console.log(`Username successfully updated to ${new_username}`);
     }
-
-    // Check if user is already signed in (anonymous or regular)
+    
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 setUser({
                     username: firebaseUser.displayName || "",
                     uid: firebaseUser.uid,
+                    elo: 700,
                     isGuest: firebaseUser.isAnonymous,
                 });
             } else {
-                // User is signed out or there is no user
-                setUser(INITIAL_USER);
+                play_as_guest();
             }
         });
-        return () => unsubscribe(); // Clean up the listener on unmount
+        return () => unsubscribe();
     }, []);
-
+    
     const value = {
         user,
         setUser,
@@ -316,12 +282,12 @@ async function sign_in_with_apple() {
         edit_current_users_username,
         // socket,
     };
-
+    
     return (
-    <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={value}>
         {children}
-    </AuthContext.Provider>
-  )
+        </AuthContext.Provider>
+    )
 }
 
 export const useAuthContext = () => useContext(AuthContext);

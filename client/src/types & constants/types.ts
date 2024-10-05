@@ -2,6 +2,7 @@
 export type IUser = {
     username: string,
     uid: string;
+    elo: number;
     isGuest: boolean;
 }
 

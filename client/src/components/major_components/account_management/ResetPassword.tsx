@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { FormTexts } from "@/types & constants/types"
 import { FaArrowLeft, FaUser } from "react-icons/fa";
 import { useAuthContext } from "@/context/AuthContext"
+import { ThirdPartyLogin } from "../ThirdParyLogin"
 
 export interface FormFieldConfig {
   name: keyof z.infer<typeof formSchema>;
@@ -43,11 +44,11 @@ const formSchema = z.object({
 })
 
 
-export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsLogInOpen: (isOpen: boolean) => void}) {
+export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen, setIsSelectUsernameOpen }: { isOpen: boolean; setIsOpen: (isOpen: boolean) => void; setIsLogInOpen: (isOpen: boolean) => void; setIsSelectUsernameOpen: (isOpen: boolean) => void}) {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { reset_password_with_username_or_email } = useAuthContext()
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(true)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,36 +104,44 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen }: { isOpen: b
             <div className="">We've emailed you a link to reset your password. Check your inbox!</div>
           </div>
           :
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-              <FormField
-                key="email"
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="relative">
-                        <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="text"
-                          className="pl-10 pr-10" 
-                          placeholder="Enter Username or Email"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="text-xs font-medium text-destructive">{errorMessage}</div>
-              <div className="pt-4">
-                <Button type="submit" className="w-full">{formTexts.submit_button}</Button>
-              </div>
-            </form>
-          </Form>
+          <div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                <FormField
+                  key="email"
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="email"
+                            type="text"
+                            className="pl-10 pr-10" 
+                            placeholder="Enter Username or Email"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="text-xs font-medium text-destructive">{errorMessage}</div>
+                <div className="pt-4">
+                  <Button type="submit" className="w-full">{formTexts.submit_button}</Button>
+                </div>
+              </form>
+            </Form>
+            <div className="flex items-center py-4">
+              <hr className="flex-grow border-t border-muted-foreground" />
+              <span className="px-2 text-gray-500 text-sm">OR</span>
+              <hr className="flex-grow border-t border-muted-foreground" />
+            </div>
+            <ThirdPartyLogin setIsLogInOpen={setIsOpen} setIsSelectUsernameOpen={setIsSelectUsernameOpen}/>
+          </div>
         }
       </DialogContent>
     </Dialog>

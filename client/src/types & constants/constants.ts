@@ -11,11 +11,11 @@
 /******************************************************************************/
 
 export const DefaultTileFields = {
-  focus: false,
-  preMove: false,
-  lastMove: false,
-  firstMove: true,
-  possibleMove: false
+    focus: false,
+    preMove: false,
+    lastMove: false,
+    firstMove: true,
+    possibleMove: false
 };
 
 export const CHESSBOARD : string[][] = [
@@ -34,3 +34,5 @@ export const BOARD_HEIGHT : number = 8;
 export const BOARD_WIDTH : number = 8;
 
 export const COLUMNS : string[] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+export const SERVER_URL : string = "http://localhost:3000"

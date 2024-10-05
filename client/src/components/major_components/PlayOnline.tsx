@@ -1,4 +1,3 @@
-import { auth } from "@/config/firebaseConfig";
 import { Button } from "../ui/button"
 import { useWebSocketContext } from "@/context/WebSocketContext";
 import { useEffect, useState } from "react";
@@ -7,16 +6,17 @@ import { useAuthContext } from "@/context/AuthContext";
 
 const PlayOnline = () => {
 
-    const { user } = useAuthContext()
-    const   { socket } = useWebSocketContext();
+    const   { user } = useAuthContext()
+    const   { socket, connectSocket } = useWebSocketContext();
     let     navigate = useNavigate();
 
-    const addToQueue = () => {
-        if (socket === null) {
-            console.log("Socket is null");
-            return (null);
+    const startGame = async () => {
+        await connectSocket()
+        if (socket) {
+            socket.emit('addToQueue', user.username);
+        } else {
+            console.log('Socket not connected.');
         }
-        socket.emit('addToQueue', user.username);
     }
 
     useEffect(() => {
@@ -36,7 +36,7 @@ const PlayOnline = () => {
     <div className="w-full h-full border flex flex-col gap-5 items-center justify-center">
         <h2>{user.username}</h2>
         <h2>{user.uid}</h2>
-        <Button onClick={addToQueue}>
+        <Button onClick={startGame}>
             Play
         </Button>
     </div>
