@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Form,
@@ -38,7 +37,7 @@ const formTexts: FormTexts = {
 }
 
 const formSchema = z.object({
-  email: z.string().min(2, {
+  email_or_username: z.string().min(2, {
     message: "Email must be at least 2 characters.",
   }),
 })
@@ -53,13 +52,13 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen, setIsSelectUs
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      email_or_username: "",
     },
   })
-  
+
   async function handleFormSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await reset_password_with_username_or_email(values.email);
+      await reset_password_with_username_or_email(values.email_or_username);
       console.log("Password reset email sent");
       setIsSuccess(true);
       // setIsOpen(false);
@@ -74,7 +73,7 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen, setIsSelectUs
     if (!open) {
       setIsSuccess(false);
       setErrorMessage(null);
-      form.reset({ email: "" });
+      form.reset({ email_or_username: "" });
     }
   };
 
@@ -110,16 +109,16 @@ export function ResetPassword({ isOpen, setIsOpen, setIsLogInOpen, setIsSelectUs
                 <FormField
                   key="email"
                   control={form.control}
-                  name="email"
+                  name="email_or_username"
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
                         <div className="relative">
                           <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                           <Input
-                            id="email"
+                            id="email_or_username"
                             type="text"
-                            className="pl-10 pr-10" 
+                            className="pl-10 pr-10"
                             placeholder="Enter Username or Email"
                             {...field}
                           />

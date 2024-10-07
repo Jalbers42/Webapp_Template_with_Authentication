@@ -12,7 +12,7 @@
 
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, sendPasswordResetEmail, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
 import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebaseConfig";
 import { SERVER_URL } from "@/types & constants/constants";
@@ -47,7 +47,7 @@ type IContextType = {
     register: (email: string, password: string, username: string) => Promise<void>;
     logOut: () => Promise<void>;
     play_as_guest: () => Promise<void>;
-    reset_password_with_username_or_email: (input: string) => Promise<void>;
+    reset_password_with_username_or_email: (email_or_username: string) => Promise<void>;
     sign_in_with_google: () => Promise<boolean>;
     sign_in_with_facebook: () => Promise<boolean>;
     sign_in_with_apple: () => Promise<boolean>;
@@ -66,7 +66,6 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     console.log("Auth Context Render");
     console.log("User: ", auth.currentUser);
 
-    // Initialize Firebase anonymous auth for guest users
     const play_as_guest = async () => {
         try {
             const result = await signInAnonymously(auth);
@@ -77,7 +76,6 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
-    // Login function for registered users
     const log_in = async (email: string, password: string) => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
@@ -98,11 +96,9 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                     username,
                 }),
             });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Registration failed');
-            }
             const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.error || 'Registration failed');
             console.log('User successfully registered:', data);
             return data;
         } catch (error) {
@@ -120,54 +116,51 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
-    // to-do improve this
-    const isValidEmail = (input: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(input);
-    };
-
-    const reset_password_with_username_or_email = async (input: string) => {
+    const reset_password_with_username_or_email = async (email_or_username: string) => {
         try {
-            let email = input;
-
-            if (!isValidEmail(input)) {
-                const q = query(collection(db, "users"), where("username", "==", input));
-                const querySnapshot = await getDocs(q);
-                if (querySnapshot.empty)
-                    throw new Error("Username not found");
-                const userDoc = querySnapshot.docs[0];
-                email = userDoc.data().email;
-            }
-            await sendPasswordResetEmail(auth, email);
-            console.log(`Password reset email sent to: ${email}`);
+            const response = await fetch(`${SERVER_URL}/firebase/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email_or_username,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.error || 'Registration failed');
+            console.log('User successfully registered:', data);
+            return data;
         } catch (error) {
-            console.error("Error during password reset", error);
+            console.error('Error registering user:', error);
             throw error;
         }
     };
 
     async function sign_in_with_google() {
         try {
-            let is_new_user: boolean = false;
-            const result = await signInWithPopup(auth, googleProvider)
+            const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
-            const userRef = doc(db, "users", user.uid)
 
-            const userSnapshot = await getDoc(userRef)
-            if (!userSnapshot.exists()) {
-                await setDoc(userRef, {
-                    username: user.displayName || "Anonymous",
-                    email: user.email,
-                    uid: user.uid,
-                    createdAt: new Date(),
-                });
-                is_new_user = true
+            // Send only the Firebase ID token to the backend
+            const response = await fetch('/api/auth/sync-user-with-database', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await user.getIdToken()}`,  // Send Firebase ID token for authentication
+                },
+            });
+
+            const data = await response.json();
+            if (data.isNewUser) {
+                console.log('New Google user created in the database');
+            } else {
+                console.log('Existing Google user signed in');
             }
-            console.log('Google user signed in:', user)
-            return (is_new_user)
+
+            return data.isNewUser;
         } catch (error) {
-            console.error('Google sign-in error:', error)
-            return (false)
+            console.error('Google sign-in error:', error);
+            return false;
         }
     }
 
@@ -287,7 +280,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
 
     return (
         <AuthContext.Provider value={value}>
-            {children}
+        {children}
         </AuthContext.Provider>
     )
 }
