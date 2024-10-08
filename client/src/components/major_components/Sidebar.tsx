@@ -8,10 +8,11 @@ import { ResetPassword } from "./account_management/ResetPassword";
 import { useState } from "react";
 import { SelectUsername } from "./account_management/SelectUsername";
 import { useAuthContext } from "@/context/AuthContext";
+import { DeleteAccount } from "./account_management/DeleteAccount";
 
 const Sidebar = () => {
 
-  const { user } = useAuthContext()
+  const { userState } = useAuthContext()
   const navigate = useNavigate()
   const [isLogInOpen, setIsLogInOpen] = useState(false)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
@@ -25,13 +26,16 @@ const Sidebar = () => {
         </div>
         <div className="flex flex-col gap-4">
           <ModeToggle />
-          { user.isGuest ? 
+          { userState.isGuest ?
             <div className="flex flex-col gap-4">
               <LogIn isOpen={isLogInOpen} setIsOpen={setIsLogInOpen} setIsResetPasswordOpen={setIsResetPasswordOpen} setIsSelectUsernameOpen={setIsSelectUsernameOpen}/>
               <SignUp setIsSelectUsernameOpen={setIsSelectUsernameOpen}/>
             </div>
             :
-            <LogOut />
+            <div className="flex flex-col gap-4">
+                <LogOut />
+                <DeleteAccount />
+            </div>
           }
           <ResetPassword isOpen={isResetPasswordOpen} setIsOpen={setIsResetPasswordOpen} setIsLogInOpen={setIsLogInOpen} setIsSelectUsernameOpen={setIsSelectUsernameOpen}/>
           <SelectUsername isOpen={isSelectUsernameOpen} setIsOpen={setIsSelectUsernameOpen} />

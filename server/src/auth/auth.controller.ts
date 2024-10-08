@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, HttpException, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Headers, HttpException, HttpStatus, Post, Put, Req } from '@nestjs/common';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { AuthService } from './auth.service';
 import { DisableAuth } from 'src/shared/disable-auth.decorator';
@@ -12,7 +12,8 @@ export class AuthController {
     @DisableAuth()
     async register_user(@Body() body: { email: string, password: string, username: string }) {
         try {
-            return await this.authService.register_user(body.email, body.password, body.username);
+            const user_credential = await this.authService.register_user(body.email, body.password, body.username);
+            return { message: "User successfully created", user_credential }
         } catch (error) {
             console.log(error.message);
             throw new HttpException(
@@ -26,9 +27,14 @@ export class AuthController {
     }
 
     @Post('reset-password')
-    async reset_password_with_username_or_email(@Body() body: { email_or_username: string}) {
+    @DisableAuth()
+    async reset_password_with_username_or_email(
+        @Req() request: Request,
+        @Body() body: { email_or_username: string},
+    ) {
         try {
-            return await this.authService.reset_password_with_username_or_email(body.email_or_username);
+            const user_email = await this.authService.reset_password_with_username_or_email(body.email_or_username);
+            return { message: `Password reset email sent to: ${user_email}`}
         } catch (error) {
             console.log(error.message);
             throw new HttpException(
@@ -42,7 +48,59 @@ export class AuthController {
     }
 
     @Post('sync-user-with-database')
-    async sync_user_with_database(@Headers('Authorization') authorization: string) {
+    async sync_user_with_database(@Req() request: Request) {
+        try {
+            const is_new_user = await this.authService.sync_user_with_database(request)
+            console.log("sync_user_with_database success. is_new_user=", is_new_user);
+            return { message: "User successfully synced with db", is_new_user }
+        } catch (error) {
+            console.log(error.message);
+            throw new HttpException(
+                {
+                    status: HttpStatus.BAD_REQUEST,
+                    error: error.message,
+                },
+                HttpStatus.BAD_REQUEST,
+            );
+
+        }
+    }
+
+    @Delete('delete-user')
+    async delete_user(@Req() request: Request) {
+        try {
+            await this.authService.delete_user(request);
+            return { message: 'User deleted successfully' };
+        } catch (error) {
+            console.log(error.message);
+            throw new HttpException(
+                {
+                    status: HttpStatus.BAD_REQUEST,
+                    error: error.message,
+                },
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    @Put('edit-username')
+    async edit_username(
+        @Req() request: Request,
+        @Body() body: { new_username: string},
+    ) {
+        try {
+            await this.authService.edit_username(request, body.new_username);
+            return { message: 'Username changed successfully' };
+        } catch (error) {
+            console.log(error.message);
+            throw new HttpException(
+                {
+                    status: HttpStatus.BAD_REQUEST,
+                    error: error.message,
+                },
+                HttpStatus.BAD_REQUEST,
+            );
+        }
     }
 
 }

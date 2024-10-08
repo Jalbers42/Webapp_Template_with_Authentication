@@ -58,12 +58,12 @@ const formSchema = z.object({
 })
 
 export function SignUp({ setIsSelectUsernameOpen }: { setIsSelectUsernameOpen : (isOpen: boolean) => void; }) {
-    
+
     const { register } = useAuthContext()
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [passwordVisible, setPasswordVisible] = useState(false)
-    
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -72,7 +72,7 @@ export function SignUp({ setIsSelectUsernameOpen }: { setIsSelectUsernameOpen : 
             password: "",
         },
     })
-    
+
     async function handleFormSubmit(values: z.infer<typeof formSchema>) {
         try {
             await register(values.email, values.password, values.username);
@@ -81,13 +81,13 @@ export function SignUp({ setIsSelectUsernameOpen }: { setIsSelectUsernameOpen : 
         } catch (error) {
             console.error("Sign in failed", error);
             if (error instanceof Error) {
-                setErrorMessage(error.message); // Here we set the error message returned from the server
+                setErrorMessage(error.message);
             } else {
                 setErrorMessage('Sign-up failed. Please try again.');
             }
         }
     }
-    
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
@@ -128,7 +128,7 @@ export function SignUp({ setIsSelectUsernameOpen }: { setIsSelectUsernameOpen : 
                     ? "text"
                     : fieldConfig.type
                 }
-                className="pl-10 pr-10" 
+                className="pl-10 pr-10"
                 placeholder={fieldConfig.placeholder}
                 {...field}
                 />

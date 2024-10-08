@@ -12,8 +12,8 @@
 
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
-import { collection, query, where, getDocs, doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
+import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, signInWithPopup } from "firebase/auth";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebaseConfig";
 import { SERVER_URL } from "@/types & constants/constants";
 
@@ -26,31 +26,29 @@ const INITIAL_USER = {
 }
 
 const INITIAL_STATE = {
-    user: INITIAL_USER,
-    setUser: () => {},
+    userState: INITIAL_USER,
+    setUserState: () => {},
     log_in: async () => {},
     register: async () => {},
     logOut: async () => {},
     play_as_guest: async () => {},
+    delete_account: async () => {},
     reset_password_with_username_or_email: async () => {},
-    sign_in_with_google: async () => false,
-    sign_in_with_facebook: async () => false,
-    sign_in_with_apple: async () => false,
+    sign_in_with_third_party_provider: async () => false,
     edit_current_users_username: async () => {},
     // socket: null
 }
 
 type IContextType = {
-    user: IUser;
-    setUser: React.Dispatch<React.SetStateAction<IUser>>;
+    userState: IUser;
+    setUserState: React.Dispatch<React.SetStateAction<IUser>>;
     log_in: (username: string, password: string) => Promise<void>;
     register: (email: string, password: string, username: string) => Promise<void>;
     logOut: () => Promise<void>;
     play_as_guest: () => Promise<void>;
+    delete_account: () => Promise<void>;
     reset_password_with_username_or_email: (email_or_username: string) => Promise<void>;
-    sign_in_with_google: () => Promise<boolean>;
-    sign_in_with_facebook: () => Promise<boolean>;
-    sign_in_with_apple: () => Promise<boolean>;
+    sign_in_with_third_party_provider: (provider: string) => Promise<boolean>;
     edit_current_users_username: (new_username: string) => Promise<void>;
     // socket: any; // Replace this with your actual socket type if needed
 }
@@ -58,10 +56,7 @@ type IContextType = {
 const AuthContext = createContext<IContextType>(INITIAL_STATE);
 
 export function AuthProvider({ children } : {children : React.ReactNode}) {
-    const [user, setUser] = useState<IUser>(INITIAL_USER);
-    const googleProvider = new GoogleAuthProvider();
-    const facebookProvider = new FacebookAuthProvider();
-    const appleProvider = new OAuthProvider('apple.com');
+    const [userState, setUserState] = useState<IUser>(INITIAL_USER);
 
     console.log("Auth Context Render");
     console.log("User: ", auth.currentUser);
@@ -100,6 +95,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
             if (!response.ok)
                 throw new Error(data.error || 'Registration failed');
             console.log('User successfully registered:', data);
+            await signInWithEmailAndPassword(auth, email, password);
             return data;
         } catch (error) {
             console.error('Error registering user:', error);
@@ -110,11 +106,38 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     const logOut = async () => {
         try {
             await signOut(auth);
-            setUser(INITIAL_USER);
+            setUserState(INITIAL_USER);
         } catch (error) {
             console.error("Error logging out", error);
         }
     };
+
+    const delete_account = async () => {
+        try {
+            const user = auth.currentUser
+            if (!user)
+                throw new Error("No authenticated user.")
+
+            const response = await fetch(`${SERVER_URL}/auth/delete-user`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await user.getIdToken()}`,
+                },
+            });
+
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.error || 'Account deletion failed');
+            console.log('Account deleted successfully:', data);
+            await logOut();
+            return data;
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            throw error;
+        }
+    };
+
 
     const reset_password_with_username_or_email = async (email_or_username: string) => {
         try {
@@ -125,10 +148,12 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                     email_or_username,
                 }),
             });
+
             const data = await response.json();
             if (!response.ok)
-                throw new Error(data.error || 'Registration failed');
-            console.log('User successfully registered:', data);
+                throw new Error(data.error || 'Reset password failed');
+            console.log('Password reset email sent:', data);
+
             return data;
         } catch (error) {
             console.error('Error registering user:', error);
@@ -136,122 +161,72 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
-    async function sign_in_with_google() {
+    async function sign_in_with_third_party_provider(provider: any) {
         try {
-            const result = await signInWithPopup(auth, googleProvider);
+            const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            // Send only the Firebase ID token to the backend
-            const response = await fetch('/api/auth/sync-user-with-database', {
+            console.log('User object from Firebase:', user);
+
+            const response = await fetch(`${SERVER_URL}/auth/sync-user-with-database`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await user.getIdToken()}`,  // Send Firebase ID token for authentication
+                    'Authorization': `Bearer ${await user.getIdToken()}`,
                 },
             });
 
             const data = await response.json();
             if (data.isNewUser) {
-                console.log('New Google user created in the database');
+                console.log('New user created in the database');
             } else {
-                console.log('Existing Google user signed in');
+                console.log('Existing user signed in');
             }
 
-            return data.isNewUser;
+            return data.is_new_user;
         } catch (error) {
             console.error('Google sign-in error:', error);
             return false;
         }
     }
 
-    // Facebook Sign-In
-    async function sign_in_with_facebook() {
-        try {
-            let is_new_user: boolean = false;
-            const result = await signInWithPopup(auth, facebookProvider);
-            const user = result.user;
-            const userRef = doc(db, "users", user.uid);
-
-            const userSnapshot = await getDoc(userRef);
-            if (!userSnapshot.exists()) {
-                await setDoc(userRef, {
-                    username: user.displayName || "Anonymous",
-                    email: user.email,
-                    uid: user.uid,
-                    createdAt: new Date(),
-                });
-                is_new_user = true
-            }
-
-            console.log('Facebook user signed in:', user);
-            return (is_new_user);
-        } catch (error) {
-            console.error('Facebook sign-in error:', error);
-            return (false)
-        }
-    }
-
-    // Apple Sign-In
-    async function sign_in_with_apple() {
-        try {
-            let is_new_user: boolean = false;
-            const result = await signInWithPopup(auth, appleProvider);
-            const user = result.user;
-            const userRef = doc(db, "users", user.uid);
-
-            const userSnapshot = await getDoc(userRef);
-            if (!userSnapshot.exists()) {
-                await setDoc(userRef, {
-                    username: user.displayName || "Anonymous",
-                    email: user.email,
-                    uid: user.uid,
-                    createdAt: new Date(),
-                });
-                is_new_user = true
-            }
-
-            console.log('Apple user signed in:', user);
-            return (is_new_user);
-        } catch (error) {
-            console.error('Apple sign-in error:', error);
-            return (false)
-        }
-    }
-
     async function edit_current_users_username(new_username:string) {
-        if (!auth.currentUser) {
-            throw new Error("No authenticated user found");
+        try {
+            const user = auth.currentUser
+            if (!user)
+                throw new Error("No authenticated user.")
+
+            const response = await fetch(`${SERVER_URL}/auth/edit-username`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await user.getIdToken()}`,
+                },
+                body: JSON.stringify({
+                    new_username,
+                }),
+            });
+
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.error || 'Select username failed');
+            console.log('Username changed successfully:', data);
+            setUserState((prevUser) => ({
+                ...prevUser,
+                username: new_username,
+            }));
+            return data;
+        } catch (error) {
+            console.error('Error editing username:', error);
+            throw error;
         }
-        const userId = auth.currentUser.uid;
-
-        // Step 1: Check if the username is already taken
-        const q = query(collection(db, "users"), where("username", "==", new_username));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            throw new Error("Username is already taken");
-        }
-
-        // Step 2: Update the username in Firestore
-        const userRef = doc(db, "users", userId);
-        await updateDoc(userRef, { username: new_username});
-
-        // Step 3: Update the displayName in Firebase Auth
-        await updateProfile(auth.currentUser, { displayName: new_username });
-
-        // Step 4: Update the local user state in the AuthContext
-        setUser((prevUser) => ({
-            ...prevUser,
-            username: new_username,
-        }));
-
-        console.log(`Username successfully updated to ${new_username}`);
     }
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                setUser({
-                    username: firebaseUser.displayName || "",
+                setUserState({
+                    username: firebaseUser.displayName || "Missing Username",
                     uid: firebaseUser.uid,
                     elo: 700,
                     isGuest: firebaseUser.isAnonymous,
@@ -264,16 +239,15 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     }, []);
 
     const value = {
-        user,
-        setUser,
+        userState,
+        setUserState,
         play_as_guest,
         log_in,
         register,
         logOut,
+        delete_account,
         reset_password_with_username_or_email,
-        sign_in_with_google,
-        sign_in_with_facebook,
-        sign_in_with_apple,
+        sign_in_with_third_party_provider,
         edit_current_users_username,
         // socket,
     };

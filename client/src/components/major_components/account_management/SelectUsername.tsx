@@ -41,12 +41,16 @@ export function SelectUsername({ isOpen, setIsOpen }: { isOpen: boolean; setIsOp
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await edit_current_users_username(values.username);
-      console.log("User successfully logged out");
-      setIsOpen(false);
+        await edit_current_users_username(values.username);
+        console.log("Username changed successfully");
+        setIsOpen(false);
     } catch (error) {
-      console.error("Log out failed", error);
-      setErrorMessage("Log out failed. Please try again.");
+        console.error("Edit username failed", error);
+        if (error instanceof Error) {
+            setErrorMessage(error.message);
+        } else {
+            setErrorMessage('Sign-up failed. Please try again.');
+        }
     }
   }
 
@@ -84,6 +88,6 @@ export function SelectUsername({ isOpen, setIsOpen }: { isOpen: boolean; setIsOp
           </form>
         </Form>
       </DialogContent>
-    </Dialog>   
+    </Dialog>
   )
 }

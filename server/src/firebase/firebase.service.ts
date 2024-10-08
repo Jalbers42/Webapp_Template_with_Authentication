@@ -6,6 +6,7 @@ import { FirebaseGameSession, GameSession } from 'src/app.types';
 import { auth } from 'firebase-admin';
 import * as admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
+import { DatabaseUser, DecodedJwtToken } from 'src/shared/types';
 
 dotenv.config();
 
@@ -102,12 +103,9 @@ export class FirebaseService {
     }
 
     async is_username_available(username: string) {
-        const q = this.db.collection('users').where('username', '==', username);
-        const querySnapshot = await q.get();
-        if (!querySnapshot.empty) {
-            return false
-        }
-        return true
+        const usersCollection = this.db.collection('users');
+        const querySnapshot = await usersCollection.where('username', '==', username).get();
+        return querySnapshot.empty;
     }
 
     async create_user(email: string, password: string, username: string) {
@@ -145,7 +143,46 @@ export class FirebaseService {
         await admin.auth().generatePasswordResetLink(email);
     }
 
-    // async sync_user_with_database() {
+    async is_user_stored_in_db(user_uid: string) {
+        const userRef = this.db.collection('users').doc(user_uid);
+        const userSnapshot = await userRef.get();
+        return (userSnapshot.exists)
+    }
 
-    // }
+    async store_user_in_db(decoded_jwt_token: DecodedJwtToken) {
+        const userRef = this.db.collection('users').doc(decoded_jwt_token.uid);
+        await userRef.set({
+            username: decoded_jwt_token.name,
+            email: decoded_jwt_token.email,
+            uid: decoded_jwt_token.uid,
+            createdAt: this.get_firebase_server_timestamp_field(),
+        });
+    }
+
+    async delete_user_from_firebase_auth(user_uid: string): Promise<void> {
+        await admin.auth().deleteUser(user_uid);
+    }
+
+    async delete_user_from_db(user_uid: string): Promise<void> {
+        const userRef = this.db.collection('users').doc(user_uid);
+        await userRef.delete();
+    }
+
+    async update_username_in_auth(user_uid: string, new_username: string) {
+        await admin.auth().updateUser(user_uid, {
+            displayName: new_username,
+        });
+    }
+
+    async update_username_in_db(user_uid: string, new_username: string) {
+        const userRef = this.db.collection('users').doc(user_uid);
+        await userRef.update({
+            username: new_username
+        });
+    }
+
+    async generate_jwt_token(user_uid: string) {
+        return await admin.auth().createCustomToken(user_uid);
+    }
+
 }

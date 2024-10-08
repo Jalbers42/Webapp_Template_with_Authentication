@@ -33,8 +33,8 @@ export class AuthGuard implements CanActivate {
             throw new UnauthorizedException('Token missing');
 
         try {
-            const decodedToken = await admin.auth().verifyIdToken(token);
-            request['user'] = decodedToken;
+            const decoded_token = await admin.auth().verifyIdToken(token);
+            request['decoded_jwt_token'] = decoded_token;
             return true;
         } catch (error) {
             throw new UnauthorizedException('Invalid or expired token');

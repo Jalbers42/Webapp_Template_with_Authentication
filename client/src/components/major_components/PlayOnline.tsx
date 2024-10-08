@@ -6,14 +6,14 @@ import { useAuthContext } from "@/context/AuthContext";
 
 const PlayOnline = () => {
 
-    const   { user } = useAuthContext()
+    const   { userState } = useAuthContext()
     const   { socket, connectSocket } = useWebSocketContext();
     let     navigate = useNavigate();
 
     const startGame = async () => {
         await connectSocket()
         if (socket) {
-            socket.emit('addToQueue', user.username);
+            socket.emit('addToQueue', userState.username);
         } else {
             console.log('Socket not connected.');
         }
@@ -23,7 +23,7 @@ const PlayOnline = () => {
         const handleMatchCreated = (gameId : string) => {
             navigate("/game/" + gameId);
         };
-    
+
         if (socket) {
             socket.on('match created', handleMatchCreated);
             return () => socket.off('match created', handleMatchCreated);
@@ -34,8 +34,8 @@ const PlayOnline = () => {
 
   return (
     <div className="w-full h-full border flex flex-col gap-5 items-center justify-center">
-        <h2>{user.username}</h2>
-        <h2>{user.uid}</h2>
+        <h2>{userState.username}</h2>
+        <h2>{userState.uid}</h2>
         <Button onClick={startGame}>
             Play
         </Button>
