@@ -13,8 +13,7 @@
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, signInWithPopup } from "firebase/auth";
-import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
-import { auth, db } from "@/config/firebaseConfig";
+import { auth } from "@/config/firebaseConfig";
 import { SERVER_URL } from "@/types & constants/constants";
 
 // to-do I might not need to save the user info in the context and firbase already stores user object --> auth.currentUser
