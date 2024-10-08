@@ -60,6 +60,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
     console.log("Auth Context Render");
     console.log("User: ", auth.currentUser);
 
+    // This needs to be checked
     const play_as_guest = async () => {
         try {
             const result = await signInAnonymously(auth);
