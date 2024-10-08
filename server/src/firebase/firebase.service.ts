@@ -101,62 +101,51 @@ export class FirebaseService {
         return response;
     }
 
-    async register_user(email: string, password: string, username: string) {
-        try {
-            const q = this.db.collection('users').where('username', '==', username);
-            const querySnapshot = await q.get();
-            if (!querySnapshot.empty) {
-                throw new Error("Username is unavailable.");
-            }
-
-            const userCredential = await admin.auth().createUser({
-                email,
-                password,
-                displayName: username,
-            });
-
-            await this.db.collection('users').doc(userCredential.uid).set({
-                username,
-                email,
-                // createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                eloRating: 1200,
-            });
-
-            return userCredential;
-        } catch (error) {
-            throw new Error(error.message);
+    async is_username_available(username: string) {
+        const q = this.db.collection('users').where('username', '==', username);
+        const querySnapshot = await q.get();
+        if (!querySnapshot.empty) {
+            return false
         }
+        return true
     }
 
-    async reset_password_with_username_or_email(email_or_username: string) {
-        try {
-            let userEmail: string | null = null
+    async create_user(email: string, password: string, username: string) {
+        const userCredential = await admin.auth().createUser({
+            email,
+            password,
+            displayName: username,
+        });
 
-            if (email_or_username.includes('@'))
-                userEmail = email_or_username
-            else {
-                const username = email_or_username
-                const usersCollection = admin.firestore().collection('users');
-                const querySnapshot = await usersCollection.where('username', '==', username).get();
+        await this.db.collection('users').doc(userCredential.uid).set({
+            username,
+            email,
+            // createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            eloRating: 1200,
+        });
 
-                if (querySnapshot.empty)
-                    throw new Error('Username not found');
-
-                const userDoc = querySnapshot.docs[0];
-                userEmail = userDoc.data().email;
-
-                if (!userEmail)
-                    throw new Error('Email not found for the given username');
-            }
-
-            await admin.auth().generatePasswordResetLink(userEmail);
-            return `Password reset email sent to: ${userEmail}`;
-        } catch (error) {
-            throw new Error(error.message);
-        }
+        return userCredential;
     }
 
-    async sync_user_with_database() {
+    async get_email_from_username(username: string) {
+        const users_collection = admin.firestore().collection('users');
+        const query_snapshot = await users_collection.where('username', '==', username).get();
+        if (query_snapshot.empty)
+            throw new Error('Username not found');
 
+        const user_doc = query_snapshot.docs[0];
+        const user_email = user_doc.data().email;
+        if (!user_email)
+            throw new Error('Email not found for the given username');
+
+        return (user_email)
     }
+
+    async generate_password_reset_link(email: string) {
+        await admin.auth().generatePasswordResetLink(email);
+    }
+
+    // async sync_user_with_database() {
+
+    // }
 }

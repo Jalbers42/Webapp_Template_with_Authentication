@@ -8,10 +8,28 @@ import { GameSessionModule } from './game-session/game-session.module';
 import { SocketModule } from './socket/socket.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { AuthModule } from './auth/auth.module';
+import { APP_GUARD, Reflector } from '@nestjs/core';
+import { AuthGuard } from './auth/auth.guard';
 
 @Module({
-  imports: [SocketModule, MatchmakingModule, GameSessionModule, EventEmitterModule.forRoot(), FirebaseModule, AuthModule],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        SocketModule,
+        MatchmakingModule,
+        GameSessionModule,
+        EventEmitterModule.forRoot(),
+        FirebaseModule,
+        AuthModule,
+    ],
+    controllers: [
+        AppController
+    ],
+    providers: [
+        AppService,
+        {
+            provide: APP_GUARD,
+            useClass: AuthGuard
+        },
+        Reflector
+    ],
 })
 export class AppModule {}

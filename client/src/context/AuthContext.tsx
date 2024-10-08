@@ -87,7 +87,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
 
     const register = async (email: string, password: string, username: string) => {
         try {
-            const response = await fetch(`${SERVER_URL}/firebase/register`, {
+            const response = await fetch(`${SERVER_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -118,7 +118,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
 
     const reset_password_with_username_or_email = async (email_or_username: string) => {
         try {
-            const response = await fetch(`${SERVER_URL}/firebase/reset-password`, {
+            const response = await fetch(`${SERVER_URL}/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
