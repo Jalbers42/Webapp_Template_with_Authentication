@@ -8,7 +8,7 @@ export function ThirdPartyLogin({ setIsLogInOpen, setIsSelectUsernameOpen } : { 
 
     const { sign_in_with_third_party_provider } = useAuthContext()
     const googleProvider = new GoogleAuthProvider();
-    const githubProvider = new GithubAuthProvider();  // Add GitHub Provider
+    // const githubProvider = new GithubAuthProvider();  // Add GitHub Provider
     // const facebookProvider = new FacebookAuthProvider();
     // const appleProvider = new OAuthProvider('apple.com');
 
@@ -35,15 +35,17 @@ export function ThirdPartyLogin({ setIsLogInOpen, setIsSelectUsernameOpen } : { 
             <span className="mx-auto">Log in with Google</span> {/* Text centered */}
         </Button>
 
+        {/* Doesnt seem to add email to jwt token... */}
         {/* GitHub Login */}
-        <Button
+        {/* <Button
             className="w-full bg-gray-800 text-white hover:bg-gray-900 flex items-center justify-center relative"
             onClick={() => handle_log_in(githubProvider)}
         >
             <FaGithub className="absolute left-4 text-lg" />
             <span className="mx-auto">Log in with GitHub</span>
-        </Button>
+        </Button> */}
 
+        {/* Requires additional set up on facebook side */}
         {/* Facebook Login */}
         {/* <Button
             className="w-full bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center relative"

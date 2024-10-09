@@ -16,19 +16,6 @@ export class AuthService {
         return {user_credential};
     }
 
-    async reset_password_with_username_or_email(email_or_username: string) {
-        let user_email: string | null = null
-
-        if (email_or_username.includes('@'))
-            user_email = email_or_username
-        else {
-            const username = email_or_username
-            user_email = await this.firebaseService.get_email_from_username(username)
-        }
-        await this.firebaseService.generate_password_reset_link(user_email)
-        return user_email
-    }
-
     async sync_user_with_database(request: Request) {
         const decoded_jwt_token: DecodedJwtToken = request['decoded_jwt_token']
         const is_new_user: boolean = !(await this.firebaseService.is_user_stored_in_db(decoded_jwt_token.uid))

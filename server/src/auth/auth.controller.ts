@@ -13,28 +13,8 @@ export class AuthController {
     async register_user(@Body() body: { email: string, password: string, username: string }) {
         try {
             const user_credential = await this.authService.register_user(body.email, body.password, body.username);
+            console.log('User registered successfully, user: ', user_credential);
             return { message: "User successfully created", user_credential }
-        } catch (error) {
-            console.log(error.message);
-            throw new HttpException(
-                {
-                    status: HttpStatus.BAD_REQUEST,
-                    error: error.message,
-                },
-                HttpStatus.BAD_REQUEST,
-            );
-        }
-    }
-
-    @Post('reset-password')
-    @DisableAuth()
-    async reset_password_with_username_or_email(
-        @Req() request: Request,
-        @Body() body: { email_or_username: string},
-    ) {
-        try {
-            const user_email = await this.authService.reset_password_with_username_or_email(body.email_or_username);
-            return { message: `Password reset email sent to: ${user_email}`}
         } catch (error) {
             console.log(error.message);
             throw new HttpException(
@@ -70,6 +50,7 @@ export class AuthController {
     async delete_user(@Req() request: Request) {
         try {
             await this.authService.delete_user(request);
+            console.log('User deleted successfully, user: ', request['decoded_jwt_token']);
             return { message: 'User deleted successfully' };
         } catch (error) {
             console.log(error.message);
@@ -90,6 +71,7 @@ export class AuthController {
     ) {
         try {
             await this.authService.edit_username(request, body.new_username);
+            console.log('Username updated. New username: ', body.new_username, ' user: ', request['decoded_jwt_token']);
             return { message: 'Username changed successfully' };
         } catch (error) {
             console.log(error.message);

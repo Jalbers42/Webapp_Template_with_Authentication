@@ -12,7 +12,7 @@
 
 import { IUser } from "@/types & constants/types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, signInWithPopup } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/config/firebaseConfig";
 import { SERVER_URL } from "@/types & constants/constants";
 
@@ -32,7 +32,7 @@ const INITIAL_STATE = {
     logOut: async () => {},
     play_as_guest: async () => {},
     delete_account: async () => {},
-    reset_password_with_username_or_email: async () => {},
+    reset_password_with_email: async () => {},
     sign_in_with_third_party_provider: async () => false,
     edit_current_users_username: async () => {},
     // socket: null
@@ -46,7 +46,7 @@ type IContextType = {
     logOut: () => Promise<void>;
     play_as_guest: () => Promise<void>;
     delete_account: () => Promise<void>;
-    reset_password_with_username_or_email: (email_or_username: string) => Promise<void>;
+    reset_password_with_email: (email: string) => Promise<void>;
     sign_in_with_third_party_provider: (provider: string) => Promise<boolean>;
     edit_current_users_username: (new_username: string) => Promise<void>;
     // socket: any; // Replace this with your actual socket type if needed
@@ -138,26 +138,12 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         }
     };
 
-
-    const reset_password_with_username_or_email = async (email_or_username: string) => {
+    const reset_password_with_email = async (email: string) => {
         try {
-            const response = await fetch(`${SERVER_URL}/auth/reset-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email_or_username,
-                }),
-            });
-
-            const data = await response.json();
-            if (!response.ok)
-                throw new Error(data.error || 'Reset password failed');
-            console.log('Password reset email sent:', data);
-
-            return data;
+            await sendPasswordResetEmail(auth, email);
+            console.log("Password reset email sent successfully");
         } catch (error) {
-            console.error('Error registering user:', error);
-            throw error;
+            console.error("Error sending password reset email:", error);
         }
     };
 
@@ -185,7 +171,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
 
             return data.is_new_user;
         } catch (error) {
-            console.error('Google sign-in error:', error);
+            console.error('Third party sign-in error:', error);
             return false;
         }
     }
@@ -197,7 +183,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                 throw new Error("No authenticated user.")
 
             const response = await fetch(`${SERVER_URL}/auth/edit-username`, {
-                method: 'DELETE',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${await user.getIdToken()}`,
@@ -232,7 +218,8 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                     isGuest: firebaseUser.isAnonymous,
                 });
             } else {
-                play_as_guest();
+                // play_as_guest();
+                console.log('Currently no user signed in.');
             }
         });
         return () => unsubscribe();
@@ -246,7 +233,7 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
         register,
         logOut,
         delete_account,
-        reset_password_with_username_or_email,
+        reset_password_with_email,
         sign_in_with_third_party_provider,
         edit_current_users_username,
         // socket,
