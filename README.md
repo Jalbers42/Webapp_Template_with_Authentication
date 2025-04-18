@@ -6,8 +6,9 @@ The webapp has login functionality using firebase, users are stored to a firesto
 
 ### Run cmds
 
-npm run dev - client
-npm run start:dev - server
+npm i
+npm run dev *client*
+npm run start:dev *server*
 
 # SETUP
 
