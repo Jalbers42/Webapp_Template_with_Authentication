@@ -2,6 +2,8 @@
 
 ### This project contains a basic web app structure, including a react.ts client, nestjs server and firebase for authentication and database.
 
+The webapp has login functionality using firebase, users are stored to a firestore db. Also there is a basic websocket connection set up using the client, if user presses the button after loggin in. This is not using socket.io, but basic websocket.
+
 ### Run cmds
 
 npm run dev - client

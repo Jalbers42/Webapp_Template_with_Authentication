@@ -19,14 +19,14 @@ const WebSocketContext = createContext<IContextType>(INITIAL_STATE);
 
 export function WebSocketProvider({ children } : {children : React.ReactNode}) {
 
-    const { user } = useAuthContext();
+    const { userState } = useAuthContext();
     const [socket, setSocket] = useState<Socket | null>(null);
 
     const connectSocket = async () => {
-        if (user && auth.currentUser && !socket) {
+        if (userState && auth.currentUser && !socket) {
             const token = await auth.currentUser.getIdToken();
 
-            const socketInstance = io('http://localhost:3000');
+            const socketInstance = io('http://localhost:3001');
 
             socketInstance.on('connect', () => {
                 console.log("Socket connected. Sending authentication message.");

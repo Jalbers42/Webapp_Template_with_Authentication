@@ -1,10 +1,9 @@
-import PlayOnline from "@/components/major_components/PlayOnline"
+import SampleButton from "@/components/major_components/SampleButton"
 
 const Home = () => {
   return (
     <div className="w-full h-full">
-        <PlayOnline />
-        {/* <Chessboard /> */}
+        <SampleButton />
     </div>
   )
 }

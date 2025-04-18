@@ -20,7 +20,6 @@ import { SERVER_URL } from "@/types & constants/constants";
 const INITIAL_USER = {
     username: "",
     uid: "",
-    elo: 0,
     isGuest: true,
 }
 
@@ -214,7 +213,6 @@ export function AuthProvider({ children } : {children : React.ReactNode}) {
                 setUserState({
                     username: firebaseUser.displayName || "Missing Username",
                     uid: firebaseUser.uid,
-                    elo: 700,
                     isGuest: firebaseUser.isAnonymous,
                 });
             } else {
